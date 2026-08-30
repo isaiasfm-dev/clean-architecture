@@ -15,6 +15,11 @@ export default defineConfig({
     resolve: {
       alias: {
         "@": resolve(__dirname, "src"),
+        "#application": resolve(__dirname, "./src/application"),
+        "#composition": resolve(__dirname, "./src/composition"),
+        "#domain": resolve(__dirname, "./src/domain"),
+        "#infrastructure": resolve(__dirname, "./src/infrastructure"),
+        "#shared": resolve(__dirname, "./src/shared"),
         application: resolve(__dirname, "./src/application"),
         composition: resolve(__dirname, "./src/composition"),
         domain: resolve(__dirname, "./src/domain"),

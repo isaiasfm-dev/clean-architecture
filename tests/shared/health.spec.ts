@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getHealthStatus } from "../../src/shared/health.js";
+import { getHealthStatus } from "#shared/health";
 
 describe("getHealthStatus", () => {
   it("returns ok", () => {

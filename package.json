@@ -6,6 +6,13 @@
   "author": "",
   "type": "module",
   "main": "dist/main.js",
+  "imports": {
+    "#application/*": "./dist/src/application/*.js",
+    "#composition/*": "./dist/src/composition/*.js",
+    "#domain/*": "./dist/src/domain/*.js",
+    "#infrastructure/*": "./dist/src/infrastructure/*.js",
+    "#shared/*": "./dist/src/shared/*.js"
+  },
   "scripts": {
     "build": "tsc",
     "check": "tsc --noEmit",
@@ -20,5 +27,8 @@
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
+  },
+  "dependencies": {
+    "fastify": "^5.12.1"
   }
 }

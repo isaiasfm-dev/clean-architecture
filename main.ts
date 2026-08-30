@@ -1,3 +1,7 @@
-import { getHealthStatus } from "./src/shared/health.js";
+import { buildServer } from "#infrastructure/http/server";
 
-console.log(`Status ${getHealthStatus()}, Timestamp: ${new Date().toISOString()}`);
+const server = buildServer();
+
+const address = await server.listen({ port: 3000 });
+
+console.log(`Server listening at ${address}`);

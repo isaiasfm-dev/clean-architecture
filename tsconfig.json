@@ -8,6 +8,13 @@
     "module": "nodenext",
     "target": "esnext",
     "types": ["node"],
+    "paths": {
+      "#application/*": ["./src/application/*.ts"],
+      "#composition/*": ["./src/composition/*.ts"],
+      "#domain/*": ["./src/domain/*.ts"],
+      "#infrastructure/*": ["./src/infrastructure/*.ts"],
+      "#shared/*": ["./src/shared/*.ts"]
+    },
 
     "sourceMap": true,
     "declaration": true,
