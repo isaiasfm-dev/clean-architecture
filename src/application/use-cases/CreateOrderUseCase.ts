@@ -1,5 +1,5 @@
-import type { Order } from "#domain/entities/Order";
 import type { OrderRepository } from "#application/ports/OrderRepository";
+import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 
 export type CreateOrderInput = {
   orderId: string;
@@ -20,10 +20,7 @@ export class CreateOrder {
       throw new Error("Order already exists");
     }
 
-    const order: Order = {
-      id: input.orderId,
-      customerId: input.customerId,
-    };
+    const order = Order.create(OrderId(input.orderId), CustomerId(input.customerId));
 
     await this.repo.save(order);
 

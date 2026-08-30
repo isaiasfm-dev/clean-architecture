@@ -16,10 +16,11 @@ describe("CreateOrder", () => {
     expect(output).toEqual({
       orderId: "order-1",
     });
-    expect(await repo.findById("order-1")).toEqual({
-      id: "order-1",
-      customerId: "customer-1",
-    });
+
+    const saved = await repo.findById("order-1");
+
+    expect(saved?.id).toBe("order-1");
+    expect(saved?.customerId).toBe("customer-1");
   });
 
   it("rejects duplicated orders", async () => {
