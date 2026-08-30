@@ -23,6 +23,8 @@ type OrderItem = {
   readonly quantity: Quantity;
 };
 
+export type OrderItemSnapshot = OrderItem;
+
 export class Order {
   private readonly items: OrderItem[] = [];
   private readonly domainEvents: OrderDomainEvent[] = [];
@@ -43,6 +45,10 @@ export class Order {
   public addItem(sku: SKU, price: Price, quantity: Quantity): void {
     this.items.push({ sku, price, quantity });
     this.domainEvents.push({ type: "order.item_added" });
+  }
+
+  public itemsSnapshot(): OrderItemSnapshot[] {
+    return this.items.map((item) => ({ ...item }));
   }
 
   public total(): Price {

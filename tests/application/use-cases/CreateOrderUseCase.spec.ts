@@ -14,7 +14,10 @@ describe("CreateOrder", () => {
     });
 
     expect(output).toEqual({
-      orderId: "order-1",
+      ok: true,
+      value: {
+        orderId: "order-1",
+      },
     });
 
     const saved = await repo.findById("order-1");
@@ -37,6 +40,34 @@ describe("CreateOrder", () => {
         orderId: "order-1",
         customerId: "customer-2",
       }),
-    ).rejects.toThrow("Order already exists");
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        type: "conflict",
+        message: "Order already exists",
+      },
+    });
+  });
+
+  it("rejects invalid input", async () => {
+    const repo = new InMemoryOrderRepository();
+    const useCase = new CreateOrder(repo);
+
+    await expect(
+      useCase.execute({
+        orderId: "",
+        customerId: " ",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: {
+        type: "validation",
+        message: "Invalid create order input",
+        details: {
+          orderId: "Order id is required",
+          customerId: "Customer id is required",
+        },
+      },
+    });
   });
 });
