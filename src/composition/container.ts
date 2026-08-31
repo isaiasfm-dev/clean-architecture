@@ -1,31 +1,37 @@
+import type { ApplicationServices } from "#application/ApplicationServices";
+import type { AppContext } from "#application/AppContext";
 import { AddItemToOrder } from "#application/use-cases/AddItemToOrderUseCase";
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
 import { GetOrderItems } from "#application/use-cases/GetOrderItemsUseCase";
-import type { OrdersUseCases } from "#application/use-cases/OrdersUseCases";
-import { NoopDomainEventPublisher } from "#infrastructure/events/NoopDomainEventPublisher";
-import { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";
-import { InMemoryPriceProvider } from "#infrastructure/pricing/InMemoryPriceProvider";
-import { SystemClock } from "#infrastructure/time/SystemClock";
+import type { ConcreteAppContext } from "#composition/ConcreteAppContext";
+import type { Config } from "#composition/config";
+import { buildDevelopmentContext } from "#composition/environments/development";
+import { buildProductionContext } from "#composition/environments/production";
+import { buildTestContext } from "#composition/environments/test";
 
-export type Container = OrdersUseCases;
+export type Container = ApplicationServices;
 
-export function createContainer(): Container {
-  const orderRepository = new InMemoryOrderRepository();
-  const priceProvider = new InMemoryPriceProvider();
-  const eventPublisher = new NoopDomainEventPublisher();
-  const clock = new SystemClock();
-  const addItemToOrder = new AddItemToOrder(
-    orderRepository,
-    priceProvider,
-    eventPublisher,
-    clock,
-  );
-  const createOrder = new CreateOrder(orderRepository);
-  const getOrderItems = new GetOrderItems(orderRepository);
+export function buildAppContext(config: Config): ConcreteAppContext {
+  switch (config.NODE_ENV) {
+    case "development":
+      return buildDevelopmentContext(config);
+    case "test":
+      return buildTestContext(config);
+    case "production":
+      return buildProductionContext(config);
+  }
+}
+
+export function createContainer(context: AppContext): ApplicationServices {
+  const addItemToOrder = new AddItemToOrder(context);
+  const createOrder = new CreateOrder(context);
+  const getOrderItems = new GetOrderItems(context);
 
   return {
-    addItemToOrder,
-    createOrder,
-    getOrderItems,
+    useCases: {
+      addItemToOrder,
+      createOrder,
+      getOrderItems,
+    },
   };
 }

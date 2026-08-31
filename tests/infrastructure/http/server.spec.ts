@@ -1,11 +1,57 @@
 import { describe, expect, it } from "vitest";
 
-import { createContainer } from "#composition/container";
+import { buildAppContext, createContainer } from "#composition/container";
+import type { Config } from "#composition/config";
 import { buildServer } from "#infrastructure/http/server";
 
+function config(overrides: Partial<Config> = {}): Config {
+  return {
+    NODE_ENV: "test",
+    DATABASE_URL: "postgres://user:password@localhost:5432/orders",
+    PRICING_BASE_URL: "http://localhost:4000",
+    USE_INMEMORY: true,
+    USE_OUTBOX: false,
+    LOG_LEVEL: "silent",
+    PRICING_TIMEOUT_MS: 5000,
+    PORT: 3000,
+    ...overrides,
+  };
+}
+
+function buildTestServer() {
+  const context = buildAppContext(config());
+
+  return buildServer(createContainer(context));
+}
+
+function expectRequestId(response: { headers: Record<string, unknown> }): string {
+  const requestId = response.headers["x-request-id"];
+
+  expect(requestId).toEqual(expect.any(String));
+  expect(requestId).toMatch(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
+
+  return requestId as string;
+}
+
 describe("orders HTTP API", () => {
+  it("returns API metadata with a request id", async () => {
+    const server = buildTestServer();
+
+    const response = await server.inject({
+      method: "GET",
+      url: "/",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expectRequestId(response);
+
+    await server.close();
+  });
+
   it("creates an order, adds an item and gets its items", async () => {
-    const server = buildServer(createContainer());
+    const server = buildTestServer();
 
     const createResponse = await server.inject({
       method: "POST",
@@ -17,6 +63,7 @@ describe("orders HTTP API", () => {
     });
 
     expect(createResponse.statusCode).toBe(201);
+    const createRequestId = expectRequestId(createResponse);
     expect(createResponse.json()).toEqual({
       orderId: "order-http-1",
     });
@@ -31,6 +78,7 @@ describe("orders HTTP API", () => {
     });
 
     expect(addItemResponse.statusCode).toBe(200);
+    const addItemRequestId = expectRequestId(addItemResponse);
     expect(addItemResponse.json()).toMatchObject({
       orderId: "order-http-1",
       sku: "sku-1",
@@ -47,6 +95,7 @@ describe("orders HTTP API", () => {
     });
 
     expect(getItemsResponse.statusCode).toBe(200);
+    const getItemsRequestId = expectRequestId(getItemsResponse);
     expect(getItemsResponse.json()).toEqual({
       orderId: "order-http-1",
       items: [
@@ -61,11 +110,13 @@ describe("orders HTTP API", () => {
       ],
     });
 
+    expect(new Set([createRequestId, addItemRequestId, getItemsRequestId]).size).toBe(3);
+
     await server.close();
   });
 
   it("returns 404 when adding an item to a missing order", async () => {
-    const server = buildServer(createContainer());
+    const server = buildTestServer();
 
     const response = await server.inject({
       method: "POST",
@@ -77,6 +128,7 @@ describe("orders HTTP API", () => {
     });
 
     expect(response.statusCode).toBe(404);
+    expectRequestId(response);
     expect(response.json()).toEqual({
       code: "not_found",
       message: "Order not found",
@@ -86,7 +138,7 @@ describe("orders HTTP API", () => {
   });
 
   it("returns 404 when getting items from a missing order", async () => {
-    const server = buildServer(createContainer());
+    const server = buildTestServer();
 
     const response = await server.inject({
       method: "GET",
@@ -94,6 +146,7 @@ describe("orders HTTP API", () => {
     });
 
     expect(response.statusCode).toBe(404);
+    expectRequestId(response);
     expect(response.json()).toEqual({
       code: "not_found",
       message: "Order not found",

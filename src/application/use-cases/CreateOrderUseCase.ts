@@ -1,4 +1,4 @@
-import type { OrderRepository } from "#application/ports/OrderRepository";
+import type { CreateOrderContext } from "#application/AppContext";
 import type {
   CreateOrderInputDto,
   CreateOrderOutputDto,
@@ -8,7 +8,7 @@ import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { fail, ok, type Result } from "#shared/result";
 
 export class CreateOrder {
-  public constructor(private readonly repo: OrderRepository) {}
+  public constructor(private readonly context: CreateOrderContext) {}
 
   public async execute(
     input: CreateOrderInputDto,
@@ -19,7 +19,7 @@ export class CreateOrder {
       return fail(validationError);
     }
 
-    const exists = await this.repo.findById(input.orderId);
+    const exists = await this.context.orderRepository.findById(input.orderId);
 
     if (exists) {
       return fail({
@@ -30,7 +30,7 @@ export class CreateOrder {
 
     const order = Order.create(OrderId(input.orderId), CustomerId(input.customerId));
 
-    await this.repo.save(order);
+    await this.context.orderRepository.save(order);
 
     return ok({
       orderId: order.id,

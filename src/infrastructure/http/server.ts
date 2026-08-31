@@ -1,7 +1,8 @@
 import Fastify from "fastify";
 
-import type { OrdersUseCases } from "#application/use-cases/OrdersUseCases";
-import { OrdersController } from "#infrastructure/http/OrderController";
+import type { ApplicationServices } from "#application/ApplicationServices";
+import { makeOrdersController } from "#infrastructure/http/OrderController";
+import { makeRequestScope } from "#infrastructure/http/scope";
 
 type CreateOrderRoute = {
   Body: {
@@ -26,27 +27,48 @@ type GetOrderItemsRoute = {
   };
 };
 
-export function buildServer(orders: OrdersUseCases) {
+export function buildServer(container: ApplicationServices) {
   const server = Fastify();
-  const ordersController = new OrdersController(orders);
 
-  server.get("/", async () => {
+  server.get("/", async (_request, reply) => {
+    const scope = makeRequestScope(container);
+
+    reply.header("x-request-id", scope.requestId);
+
     return {
       status: "ok",
-      routes: ["POST /orders", "POST /orders/:orderId/items", "GET /orders/:orderId/items"],
+      routes: [
+        "POST /orders",
+        "POST /orders/:orderId/items",
+        "GET /orders/:orderId/items"],
     };
   });
 
   server.post<CreateOrderRoute>("/orders", async (request, reply) => {
-    await ordersController.create(request, reply);
+    const scope = makeRequestScope(container);
+    const ctrl = makeOrdersController(scope.useCases);
+
+    reply.header("x-request-id", scope.requestId);
+
+    await ctrl.create(request, reply);
   });
 
   server.post<AddItemToOrderRoute>("/orders/:orderId/items", async (request, reply) => {
-    await ordersController.addItem(request, reply);
+    const scope = makeRequestScope(container);
+    const ctrl = makeOrdersController(scope.useCases);
+
+    reply.header("x-request-id", scope.requestId);
+
+    await ctrl.addItem(request, reply);
   });
 
   server.get<GetOrderItemsRoute>("/orders/:orderId/items", async (request, reply) => {
-    await ordersController.getItems(request, reply);
+    const scope = makeRequestScope(container);
+    const ctrl = makeOrdersController(scope.useCases);
+
+    reply.header("x-request-id", scope.requestId);
+
+    await ctrl.getItems(request, reply);
   });
 
   return server;

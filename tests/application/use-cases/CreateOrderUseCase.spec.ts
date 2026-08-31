@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
+import { createFakeAppContext } from "../../support/FakeAppContext";
 import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 describe("CreateOrder", () => {
   it("creates an order using execute", async () => {
     const repo = new FakeOrderRepository();
-    const useCase = new CreateOrder(repo);
+    const useCase = new CreateOrder(createFakeAppContext({ orderRepository: repo }));
 
     const output = await useCase.execute({
       orderId: "order-1",
@@ -28,7 +29,7 @@ describe("CreateOrder", () => {
 
   it("rejects duplicated orders", async () => {
     const repo = new FakeOrderRepository();
-    const useCase = new CreateOrder(repo);
+    const useCase = new CreateOrder(createFakeAppContext({ orderRepository: repo }));
 
     await useCase.execute({
       orderId: "order-1",
@@ -51,7 +52,7 @@ describe("CreateOrder", () => {
 
   it("rejects invalid input", async () => {
     const repo = new FakeOrderRepository();
-    const useCase = new CreateOrder(repo);
+    const useCase = new CreateOrder(createFakeAppContext({ orderRepository: repo }));
 
     await expect(
       useCase.execute({

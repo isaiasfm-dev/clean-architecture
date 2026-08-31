@@ -1,10 +1,10 @@
+import type { GetOrderItemsContext } from "#application/AppContext";
 import type { GetOrderItemsInputDto, GetOrderItemsOutputDto } from "#application/dtos/GetOrderItemsDto";
 import type { ApplicationError, ValidationError } from "#application/errors/ApplicationErrors";
-import type { OrderRepository } from "#application/ports/OrderRepository";
 import { fail, ok, type Result } from "#shared/result";
 
 export class GetOrderItems {
-  public constructor(private readonly repo: OrderRepository) {}
+  public constructor(private readonly context: GetOrderItemsContext) {}
 
   public async execute(
     input: GetOrderItemsInputDto,
@@ -16,7 +16,7 @@ export class GetOrderItems {
     }
 
     const orderId = input.orderId.trim();
-    const order = await this.repo.findById(orderId);
+    const order = await this.context.orderRepository.findById(orderId);
 
     if (!order) {
       return fail({

@@ -8,6 +8,7 @@ import type { DomainEvent } from "#domain/events/DomainEvent";
 import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
+import { createFakeAppContext } from "../../support/FakeAppContext";
 import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 class FixedClock implements Clock {
@@ -50,7 +51,14 @@ describe("AddItemToOrder", () => {
     const priceProvider = new FakePriceProvider(Price.create(12.35, "EUR"));
     const events = new RecordingDomainEventPublisher();
     const clock = new FixedClock();
-    const useCase = new AddItemToOrder(repo, priceProvider, events, clock);
+    const useCase = new AddItemToOrder(
+      createFakeAppContext({
+        orderRepository: repo,
+        pricingService: priceProvider,
+        eventBus: events,
+        clock,
+      }),
+    );
 
     const output = await useCase.execute({
       orderId: "order-1",
@@ -83,10 +91,12 @@ describe("AddItemToOrder", () => {
   it("fails when order does not exist", async () => {
     const repo = new FakeOrderRepository();
     const useCase = new AddItemToOrder(
-      repo,
-      new FakePriceProvider(Price.create(12.35, "EUR")),
-      new RecordingDomainEventPublisher(),
-      new FixedClock(),
+      createFakeAppContext({
+        orderRepository: repo,
+        pricingService: new FakePriceProvider(Price.create(12.35, "EUR")),
+        eventBus: new RecordingDomainEventPublisher(),
+        clock: new FixedClock(),
+      }),
     );
 
     await expect(
@@ -112,10 +122,12 @@ describe("AddItemToOrder", () => {
     await repo.save(order);
 
     const useCase = new AddItemToOrder(
-      repo,
-      new FakePriceProvider(null),
-      new RecordingDomainEventPublisher(),
-      new FixedClock(),
+      createFakeAppContext({
+        orderRepository: repo,
+        pricingService: new FakePriceProvider(null),
+        eventBus: new RecordingDomainEventPublisher(),
+        clock: new FixedClock(),
+      }),
     );
 
     await expect(
@@ -137,10 +149,12 @@ describe("AddItemToOrder", () => {
   it("rejects invalid input", async () => {
     const repo = new FakeOrderRepository();
     const useCase = new AddItemToOrder(
-      repo,
-      new FakePriceProvider(Price.create(12.35, "EUR")),
-      new RecordingDomainEventPublisher(),
-      new FixedClock(),
+      createFakeAppContext({
+        orderRepository: repo,
+        pricingService: new FakePriceProvider(Price.create(12.35, "EUR")),
+        eventBus: new RecordingDomainEventPublisher(),
+        clock: new FixedClock(),
+      }),
     );
 
     await expect(

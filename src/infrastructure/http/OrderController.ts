@@ -75,3 +75,13 @@ export class OrdersController {
     await reply.status(response.statusCode).send(response.body);
   }
 }
+
+export function makeOrdersController(useCases: OrdersUseCases) {
+  const controller = new OrdersController(useCases);
+
+  return {
+    create: controller.create.bind(controller),
+    addItem: controller.addItem.bind(controller),
+    getItems: controller.getItems.bind(controller),
+  };
+}

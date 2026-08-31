@@ -1,21 +1,13 @@
+import type { AddItemToOrderContext } from "#application/AppContext";
 import type { AddItemToOrderInputDto, AddItemToOrderOutputDto } from "#application/dtos/AddItemToOrderDto";
 import type { ApplicationError, ValidationError } from "#application/errors/ApplicationErrors";
-import type { Clock } from "#application/ports/Clock";
-import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
-import type { OrderRepository } from "#application/ports/OrderRepository";
-import type { PriceProvider } from "#application/ports/PriceProvider";
 import { InvalidPrice, InvalidQuantity } from "#domain/errors/DomainErrors";
 import { Quantity } from "#domain/value-objects/Quantity";
 import { SKU } from "#domain/value-objects/SKU";
 import { fail, ok, type Result } from "#shared/result";
 
 export class AddItemToOrder {
-  public constructor(
-    private readonly repo: OrderRepository,
-    private readonly priceProvider: PriceProvider,
-    private readonly events: DomainEventPublisher,
-    private readonly clock: Clock,
-  ) {}
+  public constructor(private readonly context: AddItemToOrderContext) {}
 
   public async execute(
     input: AddItemToOrderInputDto,
@@ -29,9 +21,9 @@ export class AddItemToOrder {
     const orderId = input.orderId.trim();
     const sku = SKU.create(input.sku.trim());
     const quantity = Quantity.create(input.quantity);
-    const requestedAt = this.clock.now();
+    const requestedAt = this.context.clock.now();
 
-    const order = await this.repo.findById(orderId);
+    const order = await this.context.orderRepository.findById(orderId);
 
     if (!order) {
       return fail({
@@ -41,7 +33,7 @@ export class AddItemToOrder {
       });
     }
 
-    const price = await this.priceProvider.getCurrentPrice(sku, requestedAt);
+    const price = await this.context.pricingService.getCurrentPrice(sku, requestedAt);
 
     if (!price) {
       return fail({
@@ -64,8 +56,8 @@ export class AddItemToOrder {
       throw error;
     }
 
-    await this.repo.save(order);
-    await this.events.publish(order.pullDomainEvents());
+    await this.context.orderRepository.save(order);
+    await this.context.eventBus.publish(order.pullDomainEvents());
 
     return ok({
       orderId: order.id,
