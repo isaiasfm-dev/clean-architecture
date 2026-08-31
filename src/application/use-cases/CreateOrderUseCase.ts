@@ -37,12 +37,6 @@ export class CreateOrder {
     });
   }
 
-  public async excecute(
-    input: CreateOrderInputDto,
-  ): Promise<Result<CreateOrderOutputDto, ApplicationError>> {
-    return this.execute(input);
-  }
-
   private validate(input: CreateOrderInputDto): ValidationError | null {
     const details: Record<string, string> = {};
 
