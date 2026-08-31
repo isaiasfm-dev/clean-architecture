@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import { createContainer } from "#composition/container";
 import { buildServer } from "#infrastructure/http/server";
 
 describe("orders HTTP API", () => {
   it("creates an order, adds an item and gets its items", async () => {
-    const server = buildServer();
+    const server = buildServer(createContainer());
 
     const createResponse = await server.inject({
       method: "POST",
@@ -64,7 +65,7 @@ describe("orders HTTP API", () => {
   });
 
   it("returns 404 when adding an item to a missing order", async () => {
-    const server = buildServer();
+    const server = buildServer(createContainer());
 
     const response = await server.inject({
       method: "POST",
@@ -77,16 +78,15 @@ describe("orders HTTP API", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({
-      type: "not_found",
-      resource: "Order",
-      id: "missing-order",
+      code: "not_found",
+      message: "Order not found",
     });
 
     await server.close();
   });
 
   it("returns 404 when getting items from a missing order", async () => {
-    const server = buildServer();
+    const server = buildServer(createContainer());
 
     const response = await server.inject({
       method: "GET",
@@ -95,9 +95,8 @@ describe("orders HTTP API", () => {
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({
-      type: "not_found",
-      resource: "Order",
-      id: "missing-order",
+      code: "not_found",
+      message: "Order not found",
     });
 
     await server.close();

@@ -1,7 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 import type { ApplicationError } from "#application/errors/ApplicationErrors";
-import { createContainer } from "#composition/container";
+import type { OrdersUseCases } from "#application/use-cases/OrdersUseCases";
+import { presentApplicationError } from "#infrastructure/http/HttpErrorPresenter";
 
 type CreateOrderRequest = FastifyRequest<{
   Body: {
@@ -26,11 +27,11 @@ type GetOrderItemsRequest = FastifyRequest<{
   };
 }>;
 
-export class OrdersControler {
-  private readonly container = createContainer();
+export class OrdersController {
+  public constructor(private readonly orders: OrdersUseCases) {}
 
   public async create(request: CreateOrderRequest, reply: FastifyReply): Promise<void> {
-    const result = await this.container.createOrder.excecute(request.body);
+    const result = await this.orders.createOrder.execute(request.body);
 
     if (!result.ok) {
       await this.sendError(reply, result.error);
@@ -41,7 +42,7 @@ export class OrdersControler {
   }
 
   public async addItem(request: AddItemToOrderRequest, reply: FastifyReply): Promise<void> {
-    const result = await this.container.addItemToOrder.execute({
+    const result = await this.orders.addItemToOrder.execute({
       orderId: request.params.orderId,
       sku: request.body.sku,
       quantity: request.body.quantity,
@@ -56,7 +57,7 @@ export class OrdersControler {
   }
 
   public async getItems(request: GetOrderItemsRequest, reply: FastifyReply): Promise<void> {
-    const result = await this.container.getOrderItems.execute({
+    const result = await this.orders.getOrderItems.execute({
       orderId: request.params.orderId,
     });
 
@@ -69,22 +70,8 @@ export class OrdersControler {
   }
 
   private async sendError(reply: FastifyReply, error: ApplicationError): Promise<void> {
-    await reply.status(this.statusFor(error)).send(error);
-  }
+    const response = presentApplicationError(error);
 
-  private statusFor(error: ApplicationError): number {
-    if (error.type === "validation") {
-      return 400;
-    }
-
-    if (error.type === "not_found") {
-      return 404;
-    }
-
-    if (error.type === "conflict") {
-      return 409;
-    }
-
-    return 500;
+    await reply.status(response.statusCode).send(response.body);
   }
 }
