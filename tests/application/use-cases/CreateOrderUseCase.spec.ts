@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
-import { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 describe("CreateOrder", () => {
   it("creates an order using execute", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new CreateOrder(repo);
 
     const output = await useCase.execute({
@@ -27,7 +27,7 @@ describe("CreateOrder", () => {
   });
 
   it("rejects duplicated orders", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new CreateOrder(repo);
 
     await useCase.execute({
@@ -50,7 +50,7 @@ describe("CreateOrder", () => {
   });
 
   it("rejects invalid input", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new CreateOrder(repo);
 
     await expect(

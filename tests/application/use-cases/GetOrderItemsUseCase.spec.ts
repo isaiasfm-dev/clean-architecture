@@ -5,11 +5,11 @@ import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import { Quantity } from "#domain/value-objects/Quantity";
 import { SKU } from "#domain/value-objects/SKU";
-import { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 describe("GetOrderItems", () => {
   it("returns order items as output DTO", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const order = Order.create(OrderId("order-1"), CustomerId("customer-1"));
     order.addItem(SKU.create("sku-1"), Price.create(12.35, "EUR"), Quantity.create(2));
     await repo.save(order);
@@ -39,7 +39,7 @@ describe("GetOrderItems", () => {
   });
 
   it("fails when order does not exist", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new GetOrderItems(repo);
 
     await expect(
@@ -57,7 +57,7 @@ describe("GetOrderItems", () => {
   });
 
   it("rejects invalid input", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new GetOrderItems(repo);
 
     await expect(
