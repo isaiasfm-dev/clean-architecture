@@ -1,9 +1,9 @@
 import type { AddItemToOrderInputDto, AddItemToOrderOutputDto } from "#application/dtos/AddItemToOrderDto";
 import type { ApplicationError, ValidationError } from "#application/errors/ApplicationErrors";
 import type { Clock } from "#application/ports/Clock";
-import type { EventBus } from "#application/ports/EventBus";
+import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import type { OrderRepository } from "#application/ports/OrderRepository";
-import type { PricingService } from "#application/ports/PricingService";
+import type { PriceProvider } from "#application/ports/PriceProvider";
 import { InvalidPrice, InvalidQuantity } from "#domain/errors/DomainErrors";
 import { Quantity } from "#domain/value-objects/Quantity";
 import { SKU } from "#domain/value-objects/SKU";
@@ -12,8 +12,8 @@ import { fail, ok, type Result } from "#shared/result";
 export class AddItemToOrder {
   public constructor(
     private readonly repo: OrderRepository,
-    private readonly pricing: PricingService,
-    private readonly events: EventBus,
+    private readonly priceProvider: PriceProvider,
+    private readonly events: DomainEventPublisher,
     private readonly clock: Clock,
   ) {}
 
@@ -41,7 +41,7 @@ export class AddItemToOrder {
       });
     }
 
-    const price = await this.pricing.getCurrentPrice(sku, requestedAt);
+    const price = await this.priceProvider.getCurrentPrice(sku, requestedAt);
 
     if (!price) {
       return fail({

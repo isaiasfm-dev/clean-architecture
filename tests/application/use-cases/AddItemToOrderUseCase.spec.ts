@@ -2,13 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { AddItemToOrder } from "#application/use-cases/AddItemToOrderUseCase";
 import type { Clock } from "#application/ports/Clock";
-import type { EventBus } from "#application/ports/EventBus";
-import type { PricingService } from "#application/ports/PricingService";
-import type { OrderDomainEvent } from "#domain/entities/Order";
+import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
+import type { PriceProvider } from "#application/ports/PriceProvider";
+import type { DomainEvent } from "#domain/events/DomainEvent";
 import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
-import { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 class FixedClock implements Clock {
   public readonly instant = new Date("2026-08-30T10:00:00.000Z");
@@ -18,7 +18,7 @@ class FixedClock implements Clock {
   }
 }
 
-class FakePricingService implements PricingService {
+class FakePriceProvider implements PriceProvider {
   public requestedSku: string | null = null;
   public requestedAt: Date | null = null;
 
@@ -32,25 +32,25 @@ class FakePricingService implements PricingService {
   }
 }
 
-class SpyEventBus implements EventBus {
-  public readonly published: OrderDomainEvent[] = [];
+class RecordingDomainEventPublisher implements DomainEventPublisher {
+  public readonly published: DomainEvent[] = [];
 
-  public async publish(events: OrderDomainEvent[]): Promise<void> {
+  public async publish(events: DomainEvent[]): Promise<void> {
     this.published.push(...events);
   }
 }
 
 describe("AddItemToOrder", () => {
   it("adds an item using current price, persists and publishes events", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const order = Order.create(OrderId("order-1"), CustomerId("customer-1"));
     order.pullDomainEvents();
     await repo.save(order);
 
-    const pricing = new FakePricingService(Price.create(12.35, "EUR"));
-    const events = new SpyEventBus();
+    const priceProvider = new FakePriceProvider(Price.create(12.35, "EUR"));
+    const events = new RecordingDomainEventPublisher();
     const clock = new FixedClock();
-    const useCase = new AddItemToOrder(repo, pricing, events, clock);
+    const useCase = new AddItemToOrder(repo, priceProvider, events, clock);
 
     const output = await useCase.execute({
       orderId: "order-1",
@@ -72,8 +72,8 @@ describe("AddItemToOrder", () => {
       },
     });
 
-    expect(pricing.requestedSku).toBe("sku-1");
-    expect(pricing.requestedAt).toBe(clock.instant);
+    expect(priceProvider.requestedSku).toBe("sku-1");
+    expect(priceProvider.requestedAt).toBe(clock.instant);
     expect(events.published).toEqual([{ type: "order.item_added" }]);
 
     const saved = await repo.findById("order-1");
@@ -81,11 +81,11 @@ describe("AddItemToOrder", () => {
   });
 
   it("fails when order does not exist", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new AddItemToOrder(
       repo,
-      new FakePricingService(Price.create(12.35, "EUR")),
-      new SpyEventBus(),
+      new FakePriceProvider(Price.create(12.35, "EUR")),
+      new RecordingDomainEventPublisher(),
       new FixedClock(),
     );
 
@@ -106,15 +106,15 @@ describe("AddItemToOrder", () => {
   });
 
   it("fails when there is no current price for the sku", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const order = Order.create(OrderId("order-1"), CustomerId("customer-1"));
     order.pullDomainEvents();
     await repo.save(order);
 
     const useCase = new AddItemToOrder(
       repo,
-      new FakePricingService(null),
-      new SpyEventBus(),
+      new FakePriceProvider(null),
+      new RecordingDomainEventPublisher(),
       new FixedClock(),
     );
 
@@ -135,11 +135,11 @@ describe("AddItemToOrder", () => {
   });
 
   it("rejects invalid input", async () => {
-    const repo = new InMemoryOrderRepository();
+    const repo = new FakeOrderRepository();
     const useCase = new AddItemToOrder(
       repo,
-      new FakePricingService(Price.create(12.35, "EUR")),
-      new SpyEventBus(),
+      new FakePriceProvider(Price.create(12.35, "EUR")),
+      new RecordingDomainEventPublisher(),
       new FixedClock(),
     );
 

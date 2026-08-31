@@ -1,3 +1,4 @@
+import type { DomainEvent } from "#domain/events/DomainEvent";
 import { Price } from "#domain/value-objects/Price";
 import type { Quantity } from "#domain/value-objects/Quantity";
 import type { SKU } from "#domain/value-objects/SKU";
@@ -13,7 +14,7 @@ export function CustomerId(value: string): CustomerId {
   return value as CustomerId;
 }
 
-export type OrderDomainEvent = {
+export type OrderDomainEvent = DomainEvent & {
   readonly type: "order.created" | "order.item_added";
 };
 
