@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 
-import { OrdersControler } from "#infrastructure/http/OrderController";
+import type { OrdersUseCases } from "#application/use-cases/OrdersUseCases";
+import { OrdersController } from "#infrastructure/http/OrderController";
 
 type CreateOrderRoute = {
   Body: {
@@ -25,9 +26,9 @@ type GetOrderItemsRoute = {
   };
 };
 
-export function buildServer() {
+export function buildServer(orders: OrdersUseCases) {
   const server = Fastify();
-  const ordersControler = new OrdersControler();
+  const ordersController = new OrdersController(orders);
 
   server.get("/", async () => {
     return {
@@ -37,15 +38,15 @@ export function buildServer() {
   });
 
   server.post<CreateOrderRoute>("/orders", async (request, reply) => {
-    await ordersControler.create(request, reply);
+    await ordersController.create(request, reply);
   });
 
   server.post<AddItemToOrderRoute>("/orders/:orderId/items", async (request, reply) => {
-    await ordersControler.addItem(request, reply);
+    await ordersController.addItem(request, reply);
   });
 
   server.get<GetOrderItemsRoute>("/orders/:orderId/items", async (request, reply) => {
-    await ordersControler.getItems(request, reply);
+    await ordersController.getItems(request, reply);
   });
 
   return server;
