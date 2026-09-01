@@ -1,3 +1,4 @@
+// src/application/use-cases/CreateOrderUseCase.ts
 import type { CreateOrderContext } from "#application/AppContext";
 import type {
   CreateOrderInputDto,
@@ -31,6 +32,7 @@ export class CreateOrder {
     const order = Order.create(OrderId(input.orderId), CustomerId(input.customerId));
 
     await this.context.orderRepository.save(order);
+    await this.context.eventBus.publish(order.pullDomainEvents());
 
     return ok({
       orderId: order.id,

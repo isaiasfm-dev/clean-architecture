@@ -1,3 +1,4 @@
+// src/application/AppContext.ts
 import type { Clock } from "#application/ports/Clock";
 import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import type { OrderRepository } from "#application/ports/OrderRepository";
@@ -28,7 +29,9 @@ export type AddItemToOrderContext =
   EventsContext &
   TimeContext;
 
-export type CreateOrderContext = OrdersContext;
+export type CreateOrderContext = 
+  OrdersContext &
+  EventsContext;
 
 export type GetOrderItemsContext = OrdersContext;
 
