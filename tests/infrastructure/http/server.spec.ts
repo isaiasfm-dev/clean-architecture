@@ -87,6 +87,10 @@ describe("orders HTTP API", () => {
         amount: 899.99,
         currency: "EUR",
       },
+      totalPrice: {
+        amount: 1799.98,
+        currency: "EUR",
+      },
     });
 
     const getItemsResponse = await server.inject({

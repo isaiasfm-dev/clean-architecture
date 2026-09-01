@@ -168,6 +168,10 @@ Respuesta:
     "amount": 899.99,
     "currency": "EUR"
   },
+  "totalPrice": {
+    "amount": 1799.98,
+    "currency": "EUR"
+  },
   "addedAt": "2026-08-31T18:00:00.000Z"
 }
 ```

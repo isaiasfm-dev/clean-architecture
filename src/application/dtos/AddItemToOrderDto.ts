@@ -15,5 +15,6 @@ export type AddItemToOrderOutputDto = {
   sku: string;
   quantity: number;
   unitPrice: MoneyDto;
+  totalPrice: MoneyDto;
   addedAt: string;
 };

@@ -76,6 +76,10 @@ describe("AddItemToOrder", () => {
           amount: 12.35,
           currency: "EUR",
         },
+        totalPrice: {
+          amount: 24.7,
+          currency: "EUR",
+        },
         addedAt: "2026-08-30T10:00:00.000Z",
       },
     });

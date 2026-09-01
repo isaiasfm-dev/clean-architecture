@@ -60,6 +60,8 @@ export class AddItemToOrder {
     await this.context.orderRepository.save(order);
     await this.context.eventBus.publish(order.pullDomainEvents());
 
+    const totalPrice = price.multiply(quantity.value);
+
     return ok({
       orderId: order.id,
       sku: sku.value,
@@ -67,6 +69,10 @@ export class AddItemToOrder {
       unitPrice: {
         amount: price.amount,
         currency: price.currency,
+      },
+      totalPrice: {
+        amount: totalPrice.amount,
+        currency: totalPrice.currency,
       },
       addedAt: requestedAt.toISOString(),
     });
