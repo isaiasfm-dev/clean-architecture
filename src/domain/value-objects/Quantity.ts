@@ -1,3 +1,4 @@
+// src/domain/value-objects/Quantity.ts
 import { InvalidQuantity } from "#domain/errors/DomainErrors";
 
 export class Quantity {

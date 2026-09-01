@@ -1,3 +1,4 @@
+// src/infrastructure/pricing/InMemoryPriceProvider.ts
 import type { PriceProvider } from "#application/ports/PriceProvider";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";

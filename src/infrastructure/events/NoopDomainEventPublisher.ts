@@ -1,3 +1,4 @@
+// src/infrastructure/events/NoopDomainEventPublisher.ts
 import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import type { DomainEvent } from "#domain/events/DomainEvent";
 

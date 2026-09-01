@@ -1,3 +1,4 @@
+// src/application/errors/ApplicationErrors.ts
 export type ValidationError = {
   type: "validation";
   message: string;

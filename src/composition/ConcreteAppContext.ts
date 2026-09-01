@@ -1,3 +1,4 @@
+// src/composition/ConcreteAppContext.ts
 import type { NoopDomainEventPublisher } from "#infrastructure/events/NoopDomainEventPublisher";
 import type { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";
 import type { InMemoryPriceProvider } from "#infrastructure/pricing/InMemoryPriceProvider";

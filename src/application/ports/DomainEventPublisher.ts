@@ -1,3 +1,4 @@
+// src/application/ports/DomainEventPublisher.ts
 import type { DomainEvent } from "#domain/events/DomainEvent";
 
 export interface DomainEventPublisher {

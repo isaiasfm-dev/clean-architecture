@@ -1,3 +1,4 @@
+// src/domain/errors/DomainErrors.ts
 export class InvalidPrice extends Error {
   public constructor(message = "Invalid price") {
     super(message);

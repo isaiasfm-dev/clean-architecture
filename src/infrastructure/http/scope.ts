@@ -1,3 +1,4 @@
+// src/infrastructure/http/scope.ts
 import { randomUUID } from "node:crypto";
 
 import type { ApplicationServices } from "#application/ApplicationServices";

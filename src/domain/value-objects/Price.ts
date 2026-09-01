@@ -1,3 +1,4 @@
+// src/domain/value-objects/Price.ts
 import { CurrencyMismatch, InvalidPrice, InvalidQuantity } from "#domain/errors/DomainErrors";
 import type { Currency } from "#domain/value-objects/Currency";
 

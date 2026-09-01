@@ -1,3 +1,4 @@
+// src/domain/entities/Order.ts
 import type { DomainEvent } from "#domain/events/DomainEvent";
 import { Price } from "#domain/value-objects/Price";
 import type { Quantity } from "#domain/value-objects/Quantity";

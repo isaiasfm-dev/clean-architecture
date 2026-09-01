@@ -1,3 +1,4 @@
+// src/domain/value-objects/SKU.ts
 export class SKU {
   private constructor(public readonly value: string) {}
 

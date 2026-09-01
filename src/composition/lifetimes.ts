@@ -1,3 +1,4 @@
+// src/composition/lifetimes.ts
 import type { AppContext } from "#application/AppContext";
 
 export type Lifetime = "singleton" | "scoped" | "transient";

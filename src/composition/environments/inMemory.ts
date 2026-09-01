@@ -1,3 +1,4 @@
+// src/composition/environments/inMemory.ts
 import type { ConcreteAppContext } from "#composition/ConcreteAppContext";
 import { NoopDomainEventPublisher } from "#infrastructure/events/NoopDomainEventPublisher";
 import { InMemoryOrderRepository } from "#infrastructure/persistence/InMemoryOrderRepository";

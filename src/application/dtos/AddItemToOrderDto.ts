@@ -1,3 +1,4 @@
+// src/application/dtos/AddItemToOrderDto.ts
 export type AddItemToOrderInputDto = {
   orderId: string;
   sku: string;

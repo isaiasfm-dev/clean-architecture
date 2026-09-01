@@ -1,3 +1,4 @@
+// src/infrastructure/http/server.ts
 import Fastify from "fastify";
 
 import type { ApplicationServices } from "#application/ApplicationServices";

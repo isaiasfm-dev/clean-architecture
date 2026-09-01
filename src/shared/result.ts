@@ -1,3 +1,4 @@
+// src/shared/result.ts
 export type Ok<T> = {
   ok: true;
   value: T;

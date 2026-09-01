@@ -1,3 +1,4 @@
+// src/infrastructure/http/HttpErrorPresenter.ts
 import type { ApplicationError } from "#application/errors/ApplicationErrors";
 
 export type HttpErrorResponse = {

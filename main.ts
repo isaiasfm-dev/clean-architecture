@@ -1,3 +1,4 @@
+// main.ts
 import { buildAppContext, createContainer } from "#composition/container";
 import { config } from "#composition/config";
 import { buildServer } from "#infrastructure/http/server";

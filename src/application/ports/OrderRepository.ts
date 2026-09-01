@@ -1,3 +1,4 @@
+// src/application/ports/OrderRepository.ts
 import type { Order } from "#domain/entities/Order";
 
 export interface OrderRepository {
