@@ -13,6 +13,7 @@ describe("GetOrderItems", () => {
     const repo = new FakeOrderRepository();
     const order = Order.create(OrderId("order-1"), CustomerId("customer-1"));
     order.addItem(SKU.create("sku-1"), Price.create(12.35, "EUR"), Quantity.create(2));
+    order.addItem(SKU.create("sku-2"), Price.create(5, "EUR"), Quantity.create(3));
     await repo.save(order);
 
     const useCase = new GetOrderItems(createFakeAppContext({ orderRepository: repo }));
@@ -33,8 +34,52 @@ describe("GetOrderItems", () => {
               amount: 12.35,
               currency: "EUR",
             },
+            totalPrice: {
+              amount: 24.7,
+              currency: "EUR",
+            },
+          },
+          {
+            sku: "sku-2",
+            quantity: 3,
+            unitPrice: {
+              amount: 5,
+              currency: "EUR",
+            },
+            totalPrice: {
+              amount: 15,
+              currency: "EUR",
+            },
           },
         ],
+        totalPrice: {
+          amount: 39.7,
+          currency: "EUR",
+        },
+      },
+    });
+  });
+
+  it("returns zero total price for empty orders", async () => {
+    const repo = new FakeOrderRepository();
+    const order = Order.create(OrderId("order-1"), CustomerId("customer-1"));
+    await repo.save(order);
+
+    const useCase = new GetOrderItems(createFakeAppContext({ orderRepository: repo }));
+
+    await expect(
+      useCase.execute({
+        orderId: "order-1",
+      }),
+    ).resolves.toEqual({
+      ok: true,
+      value: {
+        orderId: "order-1",
+        items: [],
+        totalPrice: {
+          amount: 0,
+          currency: "EUR",
+        },
       },
     });
   });

@@ -110,8 +110,16 @@ describe("orders HTTP API", () => {
             amount: 899.99,
             currency: "EUR",
           },
+          totalPrice: {
+            amount: 1799.98,
+            currency: "EUR",
+          },
         },
       ],
+      totalPrice: {
+        amount: 1799.98,
+        currency: "EUR",
+      },
     });
 
     expect(new Set([createRequestId, addItemRequestId, getItemsRequestId]).size).toBe(3);

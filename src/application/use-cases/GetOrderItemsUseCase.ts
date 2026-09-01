@@ -27,16 +27,36 @@ export class GetOrderItems {
       });
     }
 
+    const orderItems = order.itemsSnapshot();
+    const orderTotal = orderItems.length > 0 ? order.total() : null;
+
     return ok({
       orderId: order.id,
-      items: order.itemsSnapshot().map((item) => ({
-        sku: item.sku.value,
-        quantity: item.quantity.value,
-        unitPrice: {
-          amount: item.price.amount,
-          currency: item.price.currency,
-        },
-      })),
+      items: orderItems.map((item) => {
+        const itemTotal = item.price.multiply(item.quantity.value);
+
+        return {
+          sku: item.sku.value,
+          quantity: item.quantity.value,
+          unitPrice: {
+            amount: item.price.amount,
+            currency: item.price.currency,
+          },
+          totalPrice: {
+            amount: itemTotal.amount,
+            currency: itemTotal.currency,
+          },
+        };
+      }),
+      totalPrice: orderTotal
+        ? {
+            amount: orderTotal.amount,
+            currency: orderTotal.currency,
+          }
+        : {
+            amount: 0,
+            currency: "EUR",
+          },
     });
   }
 
