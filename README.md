@@ -154,7 +154,7 @@ Ejemplo:
 ```bash
 curl -i -X POST http://localhost:3000/orders/order-1/items \
   -H "Content-Type: application/json" \
-  -d '{"sku":"sku-1","quantity":2}'
+  -d '{"sku":"LAPTOP-001","quantity":2}'
 ```
 
 Respuesta:
@@ -162,10 +162,10 @@ Respuesta:
 ```json
 {
   "orderId": "order-1",
-  "sku": "sku-1",
+  "sku": "LAPTOP-001",
   "quantity": 2,
   "unitPrice": {
-    "amount": 12.35,
+    "amount": 899.99,
     "currency": "EUR"
   },
   "addedAt": "2026-08-31T18:00:00.000Z"
@@ -193,10 +193,10 @@ Respuesta:
   "orderId": "order-1",
   "items": [
     {
-      "sku": "sku-1",
+      "sku": "LAPTOP-001",
       "quantity": 2,
       "unitPrice": {
-        "amount": 12.35,
+        "amount": 899.99,
         "currency": "EUR"
       }
     }

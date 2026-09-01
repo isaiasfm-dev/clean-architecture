@@ -72,7 +72,7 @@ describe("orders HTTP API", () => {
       method: "POST",
       url: "/orders/order-http-1/items",
       payload: {
-        sku: "sku-1",
+        sku: "LAPTOP-001",
         quantity: 2,
       },
     });
@@ -81,10 +81,10 @@ describe("orders HTTP API", () => {
     const addItemRequestId = expectRequestId(addItemResponse);
     expect(addItemResponse.json()).toMatchObject({
       orderId: "order-http-1",
-      sku: "sku-1",
+      sku: "LAPTOP-001",
       quantity: 2,
       unitPrice: {
-        amount: 12.35,
+        amount: 899.99,
         currency: "EUR",
       },
     });
@@ -100,10 +100,10 @@ describe("orders HTTP API", () => {
       orderId: "order-http-1",
       items: [
         {
-          sku: "sku-1",
+          sku: "LAPTOP-001",
           quantity: 2,
           unitPrice: {
-            amount: 12.35,
+            amount: 899.99,
             currency: "EUR",
           },
         },
@@ -122,7 +122,7 @@ describe("orders HTTP API", () => {
       method: "POST",
       url: "/orders/missing-order/items",
       payload: {
-        sku: "sku-1",
+        sku: "LAPTOP-001",
         quantity: 1,
       },
     });
