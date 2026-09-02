@@ -44,6 +44,18 @@ domain
 
 Regla principal: las dependencias apuntan hacia dentro. `domain` no conoce `application`, `infrastructure` ni `composition`. Los casos de uso dependen de puertos abstractos; las implementaciones concretas se eligen en `composition`.
 
+## Casos De Uso
+
+La capa de aplicacion expone casos de uso pequenos y orientados a una intencion concreta:
+
+| Caso de uso | Entrada | Salida | Ruta HTTP |
+| --- | --- | --- | --- |
+| `CreateOrder` | `orderId`, `customerId` | `orderId` | `POST /orders` |
+| `AddItemToOrder` | `orderId`, `sku`, `quantity` | Item anadido con precio unitario, total y fecha | `POST /orders/:orderId/items` |
+| `ListOrders` | sin parametros | Listado de ordenes con `orderId`, `customerId` y `totalPrice` | `GET /orders` |
+| `FindOrdersByCustomerId` | `customerId` | `customerId` y listado de ordenes con `orderId` y `totalPrice` | `GET /customers/:customerId/orders` |
+| `GetOrderItems` | `orderId` | Items de la orden y total de la orden | `GET /orders/:orderId/items` |
+
 ## Instalacion
 
 Requisitos:
@@ -177,6 +189,64 @@ Respuesta:
 ```
 
 El valor de `addedAt` es orientativo; en ejecucion real se genera con la fecha actual.
+
+### Consultar Ordenes
+
+```http
+GET /orders
+```
+
+Ejemplo:
+
+```bash
+curl -i http://localhost:3000/orders
+```
+
+Respuesta:
+
+```json
+{
+  "orders": [
+    {
+      "orderId": "order-1",
+      "customerId": "customer-1",
+      "totalPrice": {
+        "amount": 1799.98,
+        "currency": "EUR"
+      }
+    }
+  ]
+}
+```
+
+### Consultar Ordenes De Un Cliente
+
+```http
+GET /customers/:customerId/orders
+```
+
+Ejemplo:
+
+```bash
+curl -i http://localhost:3000/customers/customer-1/orders
+```
+
+Respuesta:
+
+```json
+{
+  "customerId": "customer-1",
+  "orders": [
+    {
+      "orderId": "order-1",
+      "totalPrice": {
+        "amount": 1799.98,
+        "currency": "EUR"
+      }
+    }
+  ]
+}
+```
 
 ### Consultar Items De Una Orden
 

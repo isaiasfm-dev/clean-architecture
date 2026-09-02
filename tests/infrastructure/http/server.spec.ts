@@ -12,6 +12,7 @@ function config(overrides: Partial<Config> = {}): Config {
     USE_INMEMORY: true,
     USE_OUTBOX: false,
     LOG_LEVEL: "silent",
+    LOG_PRETTY: false,
     PRICING_TIMEOUT_MS: 5000,
     PORT: 3000,
     ...overrides,
@@ -50,7 +51,7 @@ describe("orders HTTP API", () => {
     await server.close();
   });
 
-  it("creates an order, adds an item and gets its items", async () => {
+  it("creates an order, adds an item and queries orders", async () => {
     const server = buildTestServer();
 
     const createResponse = await server.inject({
@@ -122,7 +123,55 @@ describe("orders HTTP API", () => {
       },
     });
 
-    expect(new Set([createRequestId, addItemRequestId, getItemsRequestId]).size).toBe(3);
+    const listOrdersResponse = await server.inject({
+      method: "GET",
+      url: "/orders",
+    });
+
+    expect(listOrdersResponse.statusCode).toBe(200);
+    const listOrdersRequestId = expectRequestId(listOrdersResponse);
+    expect(listOrdersResponse.json()).toEqual({
+      orders: [
+        {
+          orderId: "order-http-1",
+          customerId: "customer-http-1",
+          totalPrice: {
+            amount: 1799.98,
+            currency: "EUR",
+          },
+        },
+      ],
+    });
+
+    const getCustomerOrdersResponse = await server.inject({
+      method: "GET",
+      url: "/customers/customer-http-1/orders",
+    });
+
+    expect(getCustomerOrdersResponse.statusCode).toBe(200);
+    const getCustomerOrdersRequestId = expectRequestId(getCustomerOrdersResponse);
+    expect(getCustomerOrdersResponse.json()).toEqual({
+      customerId: "customer-http-1",
+      orders: [
+        {
+          orderId: "order-http-1",
+          totalPrice: {
+            amount: 1799.98,
+            currency: "EUR",
+          },
+        },
+      ],
+    });
+
+    expect(
+      new Set([
+        createRequestId,
+        addItemRequestId,
+        getItemsRequestId,
+        listOrdersRequestId,
+        getCustomerOrdersRequestId,
+      ]).size,
+    ).toBe(5);
 
     await server.close();
   });
@@ -166,4 +215,5 @@ describe("orders HTTP API", () => {
 
     await server.close();
   });
+
 });

@@ -28,6 +28,12 @@ type GetOrderItemsRequest = FastifyRequest<{
   };
 }>;
 
+type FindOrdersByCustomerIdRequest = FastifyRequest<{
+  Params: {
+    customerId: string;
+  };
+}>;
+
 export class OrdersController {
   public constructor(private readonly orders: OrdersUseCases) {}
 
@@ -70,6 +76,33 @@ export class OrdersController {
     await reply.status(200).send(result.value);
   }
 
+  public async list(_request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const result = await this.orders.listOrders.execute();
+
+    if (!result.ok) {
+      await this.sendError(reply, result.error);
+      return;
+    }
+
+    await reply.status(200).send(result.value);
+  }
+
+  public async findByCustomerId(
+    request: FindOrdersByCustomerIdRequest,
+    reply: FastifyReply,
+  ): Promise<void> {
+    const result = await this.orders.findOrdersByCustomerId.execute({
+      customerId: request.params.customerId,
+    });
+
+    if (!result.ok) {
+      await this.sendError(reply, result.error);
+      return;
+    }
+
+    await reply.status(200).send(result.value);
+  }
+
   private async sendError(reply: FastifyReply, error: ApplicationError): Promise<void> {
     const response = presentApplicationError(error);
 
@@ -84,5 +117,7 @@ export function makeOrdersController(useCases: OrdersUseCases) {
     create: controller.create.bind(controller),
     addItem: controller.addItem.bind(controller),
     getItems: controller.getItems.bind(controller),
+    list: controller.list.bind(controller),
+    findByCustomerId: controller.findByCustomerId.bind(controller),
   };
 }

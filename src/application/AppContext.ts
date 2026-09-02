@@ -34,8 +34,12 @@ export type CreateOrderContext =
   EventsContext;
 
 export type GetOrderItemsContext = OrdersContext;
+export type ListOrdersContext = OrdersContext;
+export type FindOrdersByCustomerIdContext = OrdersContext;
 
 export type AppContext =
   AddItemToOrderContext &
   CreateOrderContext &
-  GetOrderItemsContext;
+  GetOrderItemsContext &
+  ListOrdersContext &
+  FindOrdersByCustomerIdContext;

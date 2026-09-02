@@ -28,6 +28,12 @@ type GetOrderItemsRoute = {
   };
 };
 
+type FindOrdersByCustomerIdRoute = {
+  Params: {
+    customerId: string;
+  };
+};
+
 export function buildServer(container: ApplicationServices) {
   const server = Fastify();
 
@@ -40,8 +46,10 @@ export function buildServer(container: ApplicationServices) {
       status: "ok",
       routes: [
         "POST /orders",
+        "GET /orders",
         "POST /orders/:orderId/items",
-        "GET /orders/:orderId/items"],
+        "GET /orders/:orderId/items",
+        "GET /customers/:customerId/orders"],
     };
   });
 
@@ -52,6 +60,15 @@ export function buildServer(container: ApplicationServices) {
     reply.header("x-request-id", scope.requestId);
 
     await ctrl.create(request, reply);
+  });
+
+  server.get("/orders", async (request, reply) => {
+    const scope = makeRequestScope(container);
+    const ctrl = makeOrdersController(scope.useCases);
+
+    reply.header("x-request-id", scope.requestId);
+
+    await ctrl.list(request, reply);
   });
 
   server.post<AddItemToOrderRoute>("/orders/:orderId/items", async (request, reply) => {
@@ -70,6 +87,15 @@ export function buildServer(container: ApplicationServices) {
     reply.header("x-request-id", scope.requestId);
 
     await ctrl.getItems(request, reply);
+  });
+
+  server.get<FindOrdersByCustomerIdRoute>("/customers/:customerId/orders", async (request, reply) => {
+    const scope = makeRequestScope(container);
+    const ctrl = makeOrdersController(scope.useCases);
+
+    reply.header("x-request-id", scope.requestId);
+
+    await ctrl.findByCustomerId(request, reply);
   });
 
   return server;
