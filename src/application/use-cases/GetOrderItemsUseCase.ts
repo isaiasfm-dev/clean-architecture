@@ -2,6 +2,7 @@
 import type { GetOrderItemsContext } from "#application/AppContext";
 import type { GetOrderItemsInputDto, GetOrderItemsOutputDto } from "#application/dtos/GetOrderItemsDto";
 import type { ApplicationError, ValidationError } from "#application/errors/ApplicationErrors";
+import { mapOrderToDto } from "#application/mappers/OrderMappers";
 import { fail, ok, type Result } from "#shared/result";
 
 export class GetOrderItems {
@@ -27,36 +28,12 @@ export class GetOrderItems {
       });
     }
 
-    const orderItems = order.itemsSnapshot();
-    const orderTotal = orderItems.length > 0 ? order.total() : null;
+    const orderDto = mapOrderToDto(order);
 
     return ok({
       orderId: order.id,
-      items: orderItems.map((item) => {
-        const itemTotal = item.price.multiply(item.quantity.value);
-
-        return {
-          sku: item.sku.value,
-          quantity: item.quantity.value,
-          unitPrice: {
-            amount: item.price.amount,
-            currency: item.price.currency,
-          },
-          totalPrice: {
-            amount: itemTotal.amount,
-            currency: itemTotal.currency,
-          },
-        };
-      }),
-      totalPrice: orderTotal
-        ? {
-            amount: orderTotal.amount,
-            currency: orderTotal.currency,
-          }
-        : {
-            amount: 0,
-            currency: "EUR",
-          },
+      items: orderDto.items,
+      totalPrice: orderDto.totalPrice,
     });
   }
 
