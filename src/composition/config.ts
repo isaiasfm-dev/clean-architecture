@@ -1,5 +1,8 @@
 // src/composition/config.ts
+import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
+
+loadDotenv({ quiet: true });
 
 const booleanFromEnvSchema = z
   .enum(["true", "false"])
@@ -23,6 +26,7 @@ const rawConfigSchema = z.object({
   USE_MEMORY: booleanFromEnvSchema.optional(),
   USE_OUTBOX: booleanFromEnvSchema.optional(),
   LOG_LEVEL: logLevelSchema.optional(),
+  LOG_PRETTY: booleanFromEnvSchema.optional(),
   PRICING_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
   PORT: z
     .coerce
@@ -46,6 +50,7 @@ export const configSchema = rawConfigSchema.transform((env) => ({
       : env.NODE_ENV === "test"
         ? "silent"
         : "info"),
+  LOG_PRETTY: env.LOG_PRETTY ?? (env.NODE_ENV === "development"),
   PRICING_TIMEOUT_MS:
     env.PRICING_TIMEOUT_MS ?? (env.NODE_ENV === "production" ? 1000 : 5000),
   PORT: env.PORT,

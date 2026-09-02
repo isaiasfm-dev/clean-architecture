@@ -15,6 +15,7 @@ function config(overrides: Partial<Config> = {}): Config {
     USE_INMEMORY: true,
     USE_OUTBOX: false,
     LOG_LEVEL: "debug",
+    LOG_PRETTY: true,
     PRICING_TIMEOUT_MS: 5000,
     PORT: 3000,
     ...overrides,

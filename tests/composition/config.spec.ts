@@ -11,6 +11,7 @@ describe("loadConfig", () => {
       USE_INMEMORY: true,
       USE_OUTBOX: false,
       LOG_LEVEL: "debug",
+      LOG_PRETTY: true,
       PRICING_TIMEOUT_MS: 5000,
       PORT: 3000,
     });
@@ -24,6 +25,7 @@ describe("loadConfig", () => {
       USE_INMEMORY: false,
       USE_OUTBOX: true,
       LOG_LEVEL: "info",
+      LOG_PRETTY: false,
       PRICING_TIMEOUT_MS: 1000,
       PORT: 3000,
     });
@@ -38,6 +40,7 @@ describe("loadConfig", () => {
         USE_INMEMORY: "true",
         USE_OUTBOX: "false",
         LOG_LEVEL: "warn",
+        LOG_PRETTY: "false",
         PRICING_TIMEOUT_MS: "750",
         PORT: "8080",
       }),
@@ -48,6 +51,7 @@ describe("loadConfig", () => {
       USE_INMEMORY: true,
       USE_OUTBOX: false,
       LOG_LEVEL: "warn",
+      LOG_PRETTY: false,
       PRICING_TIMEOUT_MS: 750,
       PORT: 8080,
     });
@@ -69,6 +73,7 @@ describe("loadConfig", () => {
   it("rejects invalid boolean and port values", () => {
     expect(() => loadConfig({ USE_INMEMORY: "yes" })).toThrow();
     expect(() => loadConfig({ USE_OUTBOX: "yes" })).toThrow();
+    expect(() => loadConfig({ LOG_PRETTY: "yes" })).toThrow();
     expect(() => loadConfig({ LOG_LEVEL: "verbose" })).toThrow();
     expect(() => loadConfig({ PRICING_TIMEOUT_MS: "0" })).toThrow();
     expect(() => loadConfig({ PORT: "0" })).toThrow();

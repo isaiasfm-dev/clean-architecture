@@ -91,7 +91,9 @@ Cada respuesta HTTP incluye un header `x-request-id`, generado por request.
 
 ## Variables De Entorno
 
-La configuracion se lee desde `process.env` en `src/composition/config.ts`. Este proyecto no carga automaticamente ficheros `.env`; las variables se pasan al proceso desde la terminal o desde CI.
+La configuracion de aplicacion se carga desde `.env` y `process.env` en `src/composition/config.ts`. Las variables presentes en `process.env` tienen prioridad sobre las definidas en `.env`.
+
+El fichero `.env.db` se usa para Docker Compose y las migraciones de base de datos. No forma parte de la configuracion de aplicacion.
 
 Variables soportadas:
 
@@ -104,6 +106,7 @@ Variables soportadas:
 | `USE_MEMORY` | `true`, `false` | alias de `USE_INMEMORY` | Compatibilidad con el nombre anterior. |
 | `USE_OUTBOX` | `true`, `false` | `false` en dev/test, `true` en production | Activa outbox cuando exista implementacion real. |
 | `LOG_LEVEL` | `debug`, `info`, `warn`, `error`, `silent` | `debug` en dev, `silent` en test, `info` en production | Nivel de logs configurado por entorno. |
+| `LOG_PRETTY` | `true`, `false` | `true` en dev, `false` en test/production | Activa salida de logs legible para desarrollo. |
 | `PRICING_TIMEOUT_MS` | numero entero positivo | `5000` en dev/test, `1000` en production | Timeout previsto para pricing externo. |
 | `PORT` | numero entero positivo | `3000` | Puerto HTTP. |
 
