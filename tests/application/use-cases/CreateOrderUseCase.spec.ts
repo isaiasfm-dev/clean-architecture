@@ -1,16 +1,31 @@
 import { describe, expect, it } from "vitest";
 
+import type { ApplicationError } from "#application/errors/ApplicationErrors";
 import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
 import type { DomainEvent } from "#domain/events/DomainEvent";
+import { fail, ok, type Result } from "#shared/result";
 import { createFakeAppContext } from "../../support/FakeAppContext";
 import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
 class RecordingDomainEventPublisher implements DomainEventPublisher {
   public readonly published: DomainEvent[] = [];
 
-  public async publish(events: DomainEvent[]): Promise<void> {
+  public async publish(events: DomainEvent[]): Promise<Result<void, ApplicationError>> {
     this.published.push(...events);
+
+    return ok(undefined);
+  }
+}
+
+class FailingDomainEventPublisher implements DomainEventPublisher {
+  public readonly error: ApplicationError = {
+    type: "dependency_failure",
+    message: "Outbox unavailable",
+  };
+
+  public async publish(_events: DomainEvent[]): Promise<Result<void, ApplicationError>> {
+    return fail(this.error);
   }
 }
 
@@ -38,7 +53,13 @@ describe("CreateOrder", () => {
 
     expect(saved?.id).toBe("order-1");
     expect(saved?.customerId).toBe("customer-1");
-    expect(events.published).toEqual([{ type: "order.created" }]);
+    expect(events.published).toEqual([
+      {
+        aggregateId: "order-1",
+        aggregateType: "Order",
+        type: "order.created",
+      },
+    ]);
   });
 
   it("rejects duplicated orders", async () => {
@@ -95,5 +116,23 @@ describe("CreateOrder", () => {
     });
 
     expect(events.published).toEqual([]);
+  });
+
+  it("returns a dependency failure when event publishing fails", async () => {
+    const repo = new FakeOrderRepository();
+    const events = new FailingDomainEventPublisher();
+    const useCase = new CreateOrder(
+      createFakeAppContext({ orderRepository: repo, eventBus: events }),
+    );
+
+    await expect(
+      useCase.execute({
+        orderId: "order-1",
+        customerId: "customer-1",
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      error: events.error,
+    });
   });
 });

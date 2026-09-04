@@ -16,6 +16,7 @@ export function CustomerId(value: string): CustomerId {
 }
 
 export type OrderDomainEvent = DomainEvent & {
+  readonly aggregateType: "Order";
   readonly type: "order.created" | "order.item_added";
 };
 
@@ -26,6 +27,12 @@ type OrderItem = {
 };
 
 export type OrderItemSnapshot = OrderItem;
+
+export type OrderSnapshot = {
+  readonly id: OrderId;
+  readonly customerId: CustomerId;
+  readonly items: readonly OrderItemSnapshot[];
+};
 
 export class Order {
   private readonly items: OrderItem[] = [];
@@ -39,14 +46,30 @@ export class Order {
   public static create(id: OrderId, customerId: CustomerId): Order {
     const order = new Order(id, customerId);
 
-    order.domainEvents.push({ type: "order.created" });
+    order.domainEvents.push({
+      aggregateId: id,
+      aggregateType: "Order",
+      type: "order.created",
+    });
+
+    return order;
+  }
+
+  public static rehydrate(snapshot: OrderSnapshot): Order {
+    const order = new Order(snapshot.id, snapshot.customerId);
+
+    order.items.push(...snapshot.items);
 
     return order;
   }
 
   public addItem(sku: SKU, price: Price, quantity: Quantity): void {
     this.items.push({ sku, price, quantity });
-    this.domainEvents.push({ type: "order.item_added" });
+    this.domainEvents.push({
+      aggregateId: this.id,
+      aggregateType: "Order",
+      type: "order.item_added",
+    });
   }
 
   public itemsSnapshot(): OrderItemSnapshot[] {
