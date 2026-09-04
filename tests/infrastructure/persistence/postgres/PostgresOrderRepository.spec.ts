@@ -9,7 +9,7 @@ import { SKU } from "#domain/value-objects/SKU";
 
 type QueryCall = {
   readonly sql: string;
-  readonly values?: readonly unknown[];
+  readonly values?: readonly unknown[] | undefined;
 };
 
 const createdAt = new Date("2026-01-01T00:00:00.000Z");

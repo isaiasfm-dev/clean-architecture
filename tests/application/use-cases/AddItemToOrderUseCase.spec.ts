@@ -10,8 +10,8 @@ import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
 import { ok, type Result } from "#shared/result";
-import { createFakeAppContext } from "../../support/FakeAppContext";
-import { FakeOrderRepository } from "../../support/FakeOrderRepository";
+import { createFakeAppContext } from "../../support/FakeAppContext.js";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository.js";
 
 class FixedClock implements Clock {
   public readonly instant = new Date("2026-08-30T10:00:00.000Z");

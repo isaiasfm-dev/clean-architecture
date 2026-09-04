@@ -5,8 +5,8 @@ import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import { Quantity } from "#domain/value-objects/Quantity";
 import { SKU } from "#domain/value-objects/SKU";
-import { createFakeAppContext } from "../../support/FakeAppContext";
-import { FakeOrderRepository } from "../../support/FakeOrderRepository";
+import { createFakeAppContext } from "../../support/FakeAppContext.js";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository.js";
 
 describe("GetOrderItems", () => {
   it("returns order items as output DTO", async () => {

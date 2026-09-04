@@ -16,6 +16,9 @@ function config(overrides: Partial<Config> = {}): Config {
     PRICING_BASE_URL: "http://localhost:4000",
     USE_INMEMORY: true,
     USE_OUTBOX: false,
+    OUTBOX_WORKER_MODE: "once",
+    OUTBOX_POLL_INTERVAL_MS: 5000,
+    OUTBOX_BATCH_SIZE: 100,
     LOG_LEVEL: "silent",
     LOG_PRETTY: false,
     PRICING_TIMEOUT_MS: 5000,
@@ -49,7 +52,7 @@ function buildFailingContainer(error: Error): ApplicationServices {
 type LogEntry = {
   readonly level: "debug" | "info" | "warn" | "error";
   readonly message: string;
-  readonly obj?: LoggerContext;
+  readonly obj?: LoggerContext | undefined;
 };
 
 class RecordingLogger implements Logger {

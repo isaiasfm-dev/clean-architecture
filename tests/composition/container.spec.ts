@@ -43,7 +43,10 @@ describe("buildAppContext", () => {
     expect(context.orderRepository).toBeInstanceOf(InMemoryOrderRepository);
     expect(context.unitOfWork).toBeInstanceOf(InMemoryUnitOfWork);
     expect(context.priceProvider).toBeInstanceOf(InMemoryPriceProvider);
-    expect(context.eventBus).toBeInstanceOf(NoopDomainEventPublisher);
+    expect("eventBus" in context).toBe(true);
+    if ("eventBus" in context) {
+      expect(context.eventBus).toBeInstanceOf(NoopDomainEventPublisher);
+    }
     expect(context.clock).toBeInstanceOf(SystemClock);
   });
 

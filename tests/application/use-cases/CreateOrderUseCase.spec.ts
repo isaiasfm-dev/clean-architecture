@@ -5,8 +5,8 @@ import type { DomainEventPublisher } from "#application/ports/DomainEventPublish
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
 import type { DomainEvent } from "#domain/events/DomainEvent";
 import { fail, ok, type Result } from "#shared/result";
-import { createFakeAppContext } from "../../support/FakeAppContext";
-import { FakeOrderRepository } from "../../support/FakeOrderRepository";
+import { createFakeAppContext } from "../../support/FakeAppContext.js";
+import { FakeOrderRepository } from "../../support/FakeOrderRepository.js";
 
 class RecordingDomainEventPublisher implements DomainEventPublisher {
   public readonly published: DomainEvent[] = [];

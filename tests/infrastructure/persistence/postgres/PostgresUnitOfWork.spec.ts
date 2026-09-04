@@ -9,7 +9,7 @@ import { ok, type Result } from "#shared/result";
 
 type QueryCall = {
   readonly sql: string;
-  readonly values?: readonly unknown[];
+  readonly values?: readonly unknown[] | undefined;
 };
 
 class FakePoolClient {

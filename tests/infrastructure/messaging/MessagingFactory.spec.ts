@@ -9,11 +9,11 @@ import { DomainEventOutboxPublisher } from "#infrastructure/messaging/DomainEven
 import { OutboxDispatcher, OutboxWorker } from "#infrastructure/messaging/OutboxDispatcher";
 import { MessagingFactory } from "#infrastructure/messaging/MessagingFactory";
 
-type DispatcherInternals = OutboxDispatcher & {
+type DispatcherInternals = {
   readonly batchSize: number;
 };
 
-type WorkerInternals = OutboxWorker & {
+type WorkerInternals = {
   readonly dispatcher: OutboxDispatcher;
   readonly mode: string;
   readonly intervalMs: number;
@@ -22,7 +22,7 @@ type WorkerInternals = OutboxWorker & {
 type LogEntry = {
   readonly level: "debug" | "info" | "warn" | "error";
   readonly message: string;
-  readonly obj?: LoggerContext;
+  readonly obj?: LoggerContext | undefined;
 };
 
 class RecordingLogger implements Logger {
@@ -90,7 +90,7 @@ describe("MessagingFactory", () => {
     const dispatcher = factory.createOutboxDispatcher({} as Pool);
 
     expect(dispatcher).toBeInstanceOf(OutboxDispatcher);
-    expect((dispatcher as DispatcherInternals).batchSize).toBe(25);
+    expect((dispatcher as unknown as DispatcherInternals).batchSize).toBe(25);
   });
 
   it("creates outbox workers with the configured mode and interval", () => {
@@ -103,9 +103,9 @@ describe("MessagingFactory", () => {
     const worker = factory.createOutboxWorker(dispatcher);
 
     expect(worker).toBeInstanceOf(OutboxWorker);
-    expect((worker as WorkerInternals).dispatcher).toBe(dispatcher);
-    expect((worker as WorkerInternals).mode).toBe("loop");
-    expect((worker as WorkerInternals).intervalMs).toBe(1500);
+    expect((worker as unknown as WorkerInternals).dispatcher).toBe(dispatcher);
+    expect((worker as unknown as WorkerInternals).mode).toBe("loop");
+    expect((worker as unknown as WorkerInternals).intervalMs).toBe(1500);
   });
 
   it("uses a default outbox handler that logs dispatched events", async () => {
@@ -113,13 +113,21 @@ describe("MessagingFactory", () => {
     const logger = new RecordingLogger();
     const factory = new MessagingFactory(toMessagingOptions(config), logger);
     const dispatcher = factory.createOutboxDispatcher({} as Pool);
-    const handler = (dispatcher as OutboxDispatcher & {
+    const handler = (dispatcher as unknown as {
       readonly handler: (event: unknown) => Promise<void>;
     }).handler;
 
     await handler({
       id: "outbox-1",
+      aggregateId: "order-1",
+      aggregateType: "Order",
       eventType: "order.created",
+      payload: {
+        aggregateId: "order-1",
+        aggregateType: "Order",
+        type: "order.created",
+      },
+      createdAt: new Date("2026-08-30T10:00:00.000Z"),
     });
 
     expect(logger.entries).toEqual([

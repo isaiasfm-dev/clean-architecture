@@ -10,7 +10,7 @@ import type { DomainEvent } from "#domain/events/DomainEvent";
 import type { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
 import { ok, type Result } from "#shared/result";
-import { FakeOrderRepository } from "./FakeOrderRepository";
+import { FakeOrderRepository } from "./FakeOrderRepository.js";
 
 type FakeAppContextOverrides = Partial<AppContext> & {
   eventBus?: DomainEventPublisher;

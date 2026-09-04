@@ -18,7 +18,7 @@ type PoolWithOptions = Pool & {
 type LogEntry = {
   readonly level: "debug" | "info" | "warn" | "error";
   readonly message: string;
-  readonly obj?: LoggerContext;
+  readonly obj?: LoggerContext | undefined;
 };
 
 class RecordingLogger implements Logger {

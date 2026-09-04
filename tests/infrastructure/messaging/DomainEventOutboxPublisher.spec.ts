@@ -4,7 +4,7 @@ import { DomainEventOutboxPublisher } from "#infrastructure/messaging/DomainEven
 
 type QueryCall = {
   readonly sql: string;
-  readonly values?: readonly unknown[];
+  readonly values?: readonly unknown[] | undefined;
 };
 
 class FakeExecutor {

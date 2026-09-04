@@ -11,13 +11,13 @@ import { NoopLogger } from "#infrastructure/observability/NoopLogger";
 
 type QueryCall = {
   readonly sql: string;
-  readonly values?: readonly unknown[];
+  readonly values?: readonly unknown[] | undefined;
 };
 
 type LogEntry = {
   readonly level: "debug" | "info" | "warn" | "error";
   readonly message: string;
-  readonly obj?: LoggerContext;
+  readonly obj?: LoggerContext | undefined;
 };
 
 class RecordingLogger implements Logger {

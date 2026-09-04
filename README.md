@@ -494,5 +494,14 @@ Respuesta:
 
 ```bash
 npm run check
+npm run check:tests
 npm test
 ```
+
+Para ejecutar la validacion completa desde consola:
+
+```bash
+npm run validate
+```
+
+`npm run check` valida el codigo de produccion, `npm run check:tests` valida tambien fixtures y specs bajo `tests/`, y `npm test` ejecuta la suite con Vitest.
