@@ -24,57 +24,80 @@ export class AddItemToOrder {
     const quantity = Quantity.create(input.quantity);
     const requestedAt = this.context.clock.now();
 
-    const order = await this.context.orderRepository.findById(orderId);
-
-    if (!order) {
-      return fail({
-        type: "not_found",
-        resource: "Order",
-        id: orderId,
-      });
-    }
-
-    const price = await this.context.pricingService.getCurrentPrice(sku, requestedAt);
-
-    if (!price) {
-      return fail({
-        type: "not_found",
-        resource: "Price",
-        id: sku.value,
-      });
-    }
-
     try {
-      order.addItem(sku, price, quantity);
+      return await this.runInTransaction(orderId, sku, quantity, requestedAt);
     } catch (error) {
-      if (error instanceof InvalidPrice || error instanceof InvalidQuantity) {
-        return fail({
-          type: "validation",
-          message: error.message,
-        });
+      if (this.isApplicationError(error)) {
+        return fail(error);
       }
 
       throw error;
     }
+  }
 
-    await this.context.orderRepository.save(order);
-    await this.context.eventBus.publish(order.pullDomainEvents());
+  private async runInTransaction(
+    orderId: string,
+    sku: SKU,
+    quantity: Quantity,
+    requestedAt: Date,
+  ): Promise<Result<AddItemToOrderOutputDto, ApplicationError>> {
+    return this.context.unitOfWork.run(async ({ orderRepository, eventBus }) => {
+      const order = await orderRepository.findById(orderId);
 
-    const totalPrice = price.multiply(quantity.value);
+      if (!order) {
+        return fail({
+          type: "not_found",
+          resource: "Order",
+          id: orderId,
+        });
+      }
 
-    return ok({
-      orderId: order.id,
-      sku: sku.value,
-      quantity: quantity.value,
-      unitPrice: {
-        amount: price.amount,
-        currency: price.currency,
-      },
-      totalPrice: {
-        amount: totalPrice.amount,
-        currency: totalPrice.currency,
-      },
-      addedAt: requestedAt.toISOString(),
+      const price = await this.context.priceProvider.getCurrentPrice(sku, requestedAt);
+
+      if (!price) {
+        return fail({
+          type: "not_found",
+          resource: "Price",
+          id: sku.value,
+        });
+      }
+
+      try {
+        order.addItem(sku, price, quantity);
+      } catch (error) {
+        if (error instanceof InvalidPrice || error instanceof InvalidQuantity) {
+          return fail({
+            type: "validation",
+            message: error.message,
+          });
+        }
+
+        throw error;
+      }
+
+      await orderRepository.save(order);
+      const publishResult = await eventBus.publish(order.pullDomainEvents());
+
+      if (!publishResult.ok) {
+        throw publishResult.error;
+      }
+
+      const totalPrice = price.multiply(quantity.value);
+
+      return ok({
+        orderId: order.id,
+        sku: sku.value,
+        quantity: quantity.value,
+        unitPrice: {
+          amount: price.amount,
+          currency: price.currency,
+        },
+        totalPrice: {
+          amount: totalPrice.amount,
+          currency: totalPrice.currency,
+        },
+        addedAt: requestedAt.toISOString(),
+      });
     });
   }
 
@@ -102,5 +125,15 @@ export class AddItemToOrder {
       message: "Invalid add item to order input",
       details,
     };
+  }
+
+  private isApplicationError(error: unknown): error is ApplicationError {
+    if (typeof error !== "object" || error === null || !("type" in error)) {
+      return false;
+    }
+
+    return ["validation", "not_found", "conflict", "dependency_failure"].includes(
+      String(error.type),
+    );
   }
 }

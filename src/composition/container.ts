@@ -1,6 +1,7 @@
 // src/composition/container.ts
 import type { ApplicationServices } from "#application/ApplicationServices";
 import type { AppContext } from "#application/AppContext";
+import type { Logger } from "#application/ports/Logger";
 import { AddItemToOrder } from "#application/use-cases/AddItemToOrderUseCase";
 import { CreateOrder } from "#application/use-cases/CreateOrderUseCase";
 import { FindOrdersByCustomerId } from "#application/use-cases/FindOrdersByCustomerIdUseCase";
@@ -14,14 +15,14 @@ import { buildTestContext } from "#composition/environments/test";
 
 export type Container = ApplicationServices;
 
-export function buildAppContext(config: Config): ConcreteAppContext {
+export function buildAppContext(config: Config, logger?: Logger): ConcreteAppContext {
   switch (config.NODE_ENV) {
     case "development":
-      return buildDevelopmentContext(config);
+      return buildDevelopmentContext(config, logger);
     case "test":
-      return buildTestContext(config);
+      return buildTestContext(config, logger);
     case "production":
-      return buildProductionContext(config);
+      return buildProductionContext(config, logger);
   }
 }
 

@@ -16,8 +16,8 @@ export type ConflictError = {
   message: string;
 };
 
-export type InfraError = {
-  type: "infrastructure";
+export type DependencyFailure = {
+  type: "dependency_failure";
   message: string;
 };
 
@@ -25,4 +25,4 @@ export type ApplicationError =
   | ValidationError
   | NotFoundError
   | ConflictError
-  | InfraError;
+  | DependencyFailure;

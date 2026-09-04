@@ -20,22 +20,42 @@ export class CreateOrder {
       return fail(validationError);
     }
 
-    const exists = await this.context.orderRepository.findById(input.orderId);
+    try {
+      return await this.runInTransaction(input);
+    } catch (error) {
+      if (this.isApplicationError(error)) {
+        return fail(error);
+      }
 
-    if (exists) {
-      return fail({
-        type: "conflict",
-        message: "Order already exists",
-      });
+      throw error;
     }
+  }
 
-    const order = Order.create(OrderId(input.orderId), CustomerId(input.customerId));
+  private async runInTransaction(
+    input: CreateOrderInputDto,
+  ): Promise<Result<CreateOrderOutputDto, ApplicationError>> {
+    return this.context.unitOfWork.run(async ({ orderRepository, eventBus }) => {
+      const exists = await orderRepository.findById(input.orderId);
 
-    await this.context.orderRepository.save(order);
-    await this.context.eventBus.publish(order.pullDomainEvents());
+      if (exists) {
+        return fail({
+          type: "conflict",
+          message: "Order already exists",
+        });
+      }
 
-    return ok({
-      orderId: order.id,
+      const order = Order.create(OrderId(input.orderId), CustomerId(input.customerId));
+
+      await orderRepository.save(order);
+      const publishResult = await eventBus.publish(order.pullDomainEvents());
+
+      if (!publishResult.ok) {
+        throw publishResult.error;
+      }
+
+      return ok({
+        orderId: order.id,
+      });
     });
   }
 
@@ -59,5 +79,15 @@ export class CreateOrder {
       message: "Invalid create order input",
       details,
     };
+  }
+
+  private isApplicationError(error: unknown): error is ApplicationError {
+    if (typeof error !== "object" || error === null || !("type" in error)) {
+      return false;
+    }
+
+    return ["validation", "not_found", "conflict", "dependency_failure"].includes(
+      String(error.type),
+    );
   }
 }

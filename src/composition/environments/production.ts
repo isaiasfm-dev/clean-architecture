@@ -1,18 +1,14 @@
 // src/composition/environments/production.ts
 import type { ConcreteAppContext } from "#composition/ConcreteAppContext";
+import type { Logger } from "#application/ports/Logger";
 import type { Config } from "#composition/config";
 import { buildInMemoryAppContext } from "#composition/environments/inMemory";
+import { buildPostgresAppContext } from "#composition/environments/postgres";
 
-export function buildProductionContext(config: Config): ConcreteAppContext {
-  if (!config.USE_INMEMORY) {
-    throw new Error(
-      "Production real app context is not implemented yet: database, outbox and dispatcher are required.",
-    );
+export function buildProductionContext(config: Config, logger?: Logger): ConcreteAppContext {
+  if (config.USE_INMEMORY) {
+    return buildInMemoryAppContext();
   }
 
-  if (config.USE_OUTBOX) {
-    throw new Error("Production outbox and dispatcher are not implemented yet.");
-  }
-
-  return buildInMemoryAppContext();
+  return buildPostgresAppContext(config, logger);
 }

@@ -1,16 +1,14 @@
 // src/composition/environments/test.ts
 import type { ConcreteAppContext } from "#composition/ConcreteAppContext";
+import type { Logger } from "#application/ports/Logger";
 import type { Config } from "#composition/config";
 import { buildInMemoryAppContext } from "#composition/environments/inMemory";
+import { buildPostgresAppContext } from "#composition/environments/postgres";
 
-export function buildTestContext(config: Config): ConcreteAppContext {
-  if (!config.USE_INMEMORY) {
-    throw new Error("Test database adapters are not implemented yet.");
+export function buildTestContext(config: Config, logger?: Logger): ConcreteAppContext {
+  if (config.USE_INMEMORY) {
+    return buildInMemoryAppContext();
   }
 
-  if (config.USE_OUTBOX) {
-    throw new Error("Test outbox is not implemented yet. Set USE_OUTBOX=false.");
-  }
-
-  return buildInMemoryAppContext();
+  return buildPostgresAppContext(config, logger);
 }

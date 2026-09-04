@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { AddItemToOrder } from "#application/use-cases/AddItemToOrderUseCase";
+import type { ApplicationError } from "#application/errors/ApplicationErrors";
 import type { Clock } from "#application/ports/Clock";
 import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import type { PriceProvider } from "#application/ports/PriceProvider";
@@ -8,6 +9,7 @@ import type { DomainEvent } from "#domain/events/DomainEvent";
 import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
+import { ok, type Result } from "#shared/result";
 import { createFakeAppContext } from "../../support/FakeAppContext";
 import { FakeOrderRepository } from "../../support/FakeOrderRepository";
 
@@ -36,8 +38,10 @@ class FakePriceProvider implements PriceProvider {
 class RecordingDomainEventPublisher implements DomainEventPublisher {
   public readonly published: DomainEvent[] = [];
 
-  public async publish(events: DomainEvent[]): Promise<void> {
+  public async publish(events: DomainEvent[]): Promise<Result<void, ApplicationError>> {
     this.published.push(...events);
+
+    return ok(undefined);
   }
 }
 
@@ -54,7 +58,7 @@ describe("AddItemToOrder", () => {
     const useCase = new AddItemToOrder(
       createFakeAppContext({
         orderRepository: repo,
-        pricingService: priceProvider,
+        priceProvider,
         eventBus: events,
         clock,
       }),
@@ -86,7 +90,13 @@ describe("AddItemToOrder", () => {
 
     expect(priceProvider.requestedSku).toBe("sku-1");
     expect(priceProvider.requestedAt).toBe(clock.instant);
-    expect(events.published).toEqual([{ type: "order.item_added" }]);
+    expect(events.published).toEqual([
+      {
+        aggregateId: "order-1",
+        aggregateType: "Order",
+        type: "order.item_added",
+      },
+    ]);
 
     const saved = await repo.findById("order-1");
     expect(saved?.total().amount).toBe(24.7);
@@ -97,7 +107,7 @@ describe("AddItemToOrder", () => {
     const useCase = new AddItemToOrder(
       createFakeAppContext({
         orderRepository: repo,
-        pricingService: new FakePriceProvider(Price.create(12.35, "EUR")),
+        priceProvider: new FakePriceProvider(Price.create(12.35, "EUR")),
         eventBus: new RecordingDomainEventPublisher(),
         clock: new FixedClock(),
       }),
@@ -128,7 +138,7 @@ describe("AddItemToOrder", () => {
     const useCase = new AddItemToOrder(
       createFakeAppContext({
         orderRepository: repo,
-        pricingService: new FakePriceProvider(null),
+        priceProvider: new FakePriceProvider(null),
         eventBus: new RecordingDomainEventPublisher(),
         clock: new FixedClock(),
       }),
@@ -155,7 +165,7 @@ describe("AddItemToOrder", () => {
     const useCase = new AddItemToOrder(
       createFakeAppContext({
         orderRepository: repo,
-        pricingService: new FakePriceProvider(Price.create(12.35, "EUR")),
+        priceProvider: new FakePriceProvider(Price.create(12.35, "EUR")),
         eventBus: new RecordingDomainEventPublisher(),
         clock: new FixedClock(),
       }),

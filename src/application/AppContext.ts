@@ -1,22 +1,19 @@
 // src/application/AppContext.ts
 import type { Clock } from "#application/ports/Clock";
-import type { DomainEventPublisher } from "#application/ports/DomainEventPublisher";
 import type { OrderRepository } from "#application/ports/OrderRepository";
 import type { PriceProvider } from "#application/ports/PriceProvider";
-
-export type PricingService = PriceProvider;
-export type EventBus = DomainEventPublisher;
+import type { UnitOfWork } from "#application/ports/UnitOfWork";
 
 export type OrdersContext = {
   orderRepository: OrderRepository;
 };
 
-export type PricingContext = {
-  pricingService: PricingService;
+export type UnitOfWorkContext = {
+  unitOfWork: UnitOfWork;
 };
 
-export type EventsContext = {
-  eventBus: EventBus;
+export type PricingContext = {
+  priceProvider: PriceProvider;
 };
 
 export type TimeContext = {
@@ -24,20 +21,19 @@ export type TimeContext = {
 };
 
 export type AddItemToOrderContext =
-  OrdersContext &
+  UnitOfWorkContext &
   PricingContext &
-  EventsContext &
   TimeContext;
 
-export type CreateOrderContext = 
-  OrdersContext &
-  EventsContext;
+export type CreateOrderContext = UnitOfWorkContext;
 
 export type GetOrderItemsContext = OrdersContext;
 export type ListOrdersContext = OrdersContext;
 export type FindOrdersByCustomerIdContext = OrdersContext;
 
 export type AppContext =
+  OrdersContext &
+  UnitOfWorkContext &
   AddItemToOrderContext &
   CreateOrderContext &
   GetOrderItemsContext &
