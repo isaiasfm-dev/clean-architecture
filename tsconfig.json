@@ -33,6 +33,7 @@
 
   "include": [
     "src/**/*.ts",
+    "scripts/**/*.ts",
     "main.ts"
   ],
 

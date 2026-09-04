@@ -20,6 +20,7 @@ pnpm-debug.log*
 
 # Runtime and cache files
 .cache/
+.docker/
 .vite/
 .vitest/
 tmp/
