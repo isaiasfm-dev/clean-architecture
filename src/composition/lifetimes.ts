@@ -10,8 +10,8 @@ export type RequestScopeLifetimeMap = {
 
 export const appContextLifetimes = {
   orderRepository: "singleton",
-  pricingService: "singleton",
-  eventBus: "singleton",
+  unitOfWork: "singleton",
+  priceProvider: "singleton",
   clock: "singleton",
 } satisfies AppContextLifetimeMap;
 

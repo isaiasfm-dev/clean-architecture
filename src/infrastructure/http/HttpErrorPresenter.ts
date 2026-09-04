@@ -45,8 +45,8 @@ export function presentApplicationError(error: ApplicationError): HttpErrorRespo
   return {
     statusCode: 500,
     body: {
-      code: "infrastructure_error",
-      message: "Unexpected infrastructure error",
+      code: "dependency_failure",
+      message: "Unexpected dependency failure",
     },
   };
 }

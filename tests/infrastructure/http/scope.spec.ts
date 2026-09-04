@@ -8,6 +8,9 @@ function config(overrides: Partial<Config> = {}): Config {
   return {
     NODE_ENV: "test",
     DATABASE_URL: "postgres://user:password@localhost:5432/orders",
+    DATABASE_POOL_MAX: 10,
+    DATABASE_IDLE_TIMEOUT_MS: 30000,
+    DATABASE_CONNECTION_TIMEOUT_MS: 2000,
     PRICING_BASE_URL: "http://localhost:4000",
     USE_INMEMORY: true,
     USE_OUTBOX: false,

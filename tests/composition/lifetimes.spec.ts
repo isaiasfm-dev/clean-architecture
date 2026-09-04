@@ -6,8 +6,8 @@ describe("appContextLifetimes", () => {
   it("documents application-wide singleton dependencies", () => {
     expect(appContextLifetimes).toEqual({
       orderRepository: "singleton",
-      pricingService: "singleton",
-      eventBus: "singleton",
+      unitOfWork: "singleton",
+      priceProvider: "singleton",
       clock: "singleton",
     });
   });
