@@ -6,6 +6,12 @@ import { InMemoryUnitOfWork } from "#infrastructure/persistence/InMemoryUnitOfWo
 import { InMemoryPriceProvider } from "#infrastructure/pricing/InMemoryPriceProvider";
 import { SystemClock } from "#infrastructure/time/SystemClock";
 
+/**
+ * Ensambla el contexto usado cuando `USE_INMEMORY` esta activo.
+ *
+ * La persistencia y la unidad de trabajo comparten el mismo repositorio en
+ * memoria; los eventos se entregan a un publicador no operativo.
+ */
 export function buildInMemoryAppContext(): ConcreteAppContext {
   const orderRepository = new InMemoryOrderRepository();
   const eventBus = new NoopDomainEventPublisher();

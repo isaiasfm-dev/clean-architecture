@@ -1,4 +1,8 @@
 -- db/migrations/003_add_outbox.sql
+-- Outbox almacena eventos junto al estado del agregado para que un proceso
+-- posterior pueda despacharlos. Un registro pendiente se identifica por un
+-- published_at nulo; la insercion y la persistencia del agregado solo son
+-- atomicas cuando ambas operaciones participan en la misma transaccion.
 CREATE TABLE IF NOT EXISTS outbox (
   id uuid PRIMARY KEY,
   aggregate_id text NOT NULL,

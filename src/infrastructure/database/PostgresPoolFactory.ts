@@ -11,6 +11,14 @@ export type PostgresPoolOptions = {
   readonly connectionTimeoutMillis: number;
 };
 
+/**
+ * Construye y conserva el pool PostgreSQL compartido por la composicion del
+ * proceso.
+ *
+ * Mientras no se cierre con `closePool`, las llamadas posteriores devuelven la
+ * misma instancia. Los errores inesperados emitidos por el pool se registran y
+ * terminan el proceso, que es el comportamiento implementado por el adaptador.
+ */
 export class PostgresPoolFactory {
   private static pool: Pool | null = null;
 

@@ -3,6 +3,12 @@ import type { Logger as PinoLoggerInstance } from "pino";
 
 import type { Logger, LoggerContext } from "#application/ports/Logger";
 
+/**
+ * Adaptador del puerto `Logger` sobre una instancia de Pino.
+ *
+ * El contexto se envia como objeto estructurado y `child` crea una instancia
+ * con campos contextuales heredados por Pino.
+ */
 export class PinoLogger implements Logger {
   public constructor(private readonly logger: PinoLoggerInstance) {}
 

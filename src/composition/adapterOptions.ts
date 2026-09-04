@@ -5,6 +5,13 @@ import type { PostgresPoolOptions } from "#infrastructure/database/PostgresPoolF
 import type { MessagingOptions } from "#infrastructure/messaging/MessagingFactory";
 import type { PinoLoggerFactoryOptions } from "#infrastructure/observability/LoggerFactory";
 
+/**
+ * Traduce la configuracion validada a opciones explicitas del adaptador
+ * PostgreSQL.
+ *
+ * Esta capa mantiene a los builders de entorno separados de los nombres y
+ * requisitos concretos de cada factory de infraestructura.
+ */
 export function toPostgresPoolOptions(config: Config): PostgresPoolOptions {
   return {
     connectionString: getDatabaseUrl(config),
@@ -14,6 +21,10 @@ export function toPostgresPoolOptions(config: Config): PostgresPoolOptions {
   };
 }
 
+/**
+ * Extrae la configuracion que decide si los eventos usan outbox y como se
+ * ejecuta su worker.
+ */
 export function toMessagingOptions(config: Config): MessagingOptions {
   return {
     useOutbox: config.USE_OUTBOX,

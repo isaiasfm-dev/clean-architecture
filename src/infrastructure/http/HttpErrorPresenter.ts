@@ -1,6 +1,9 @@
 // src/infrastructure/http/HttpErrorPresenter.ts
 import type { ApplicationError } from "#application/errors/ApplicationErrors";
 
+/**
+ * Respuesta HTTP resultante de traducir un error controlado de aplicacion.
+ */
 export type HttpErrorResponse = {
   statusCode: number;
   body: {
@@ -10,6 +13,11 @@ export type HttpErrorResponse = {
   };
 };
 
+/**
+ * Traduce las categorias de `ApplicationError` que tienen una respuesta HTTP
+ * explicita. Los errores no contemplados se presentan como un fallo generico
+ * de dependencia con estado 500.
+ */
 export function presentApplicationError(error: ApplicationError): HttpErrorResponse {
   if (error.type === "validation") {
     return {

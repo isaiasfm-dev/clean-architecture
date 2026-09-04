@@ -13,8 +13,19 @@ import { buildDevelopmentContext } from "#composition/environments/development";
 import { buildProductionContext } from "#composition/environments/production";
 import { buildTestContext } from "#composition/environments/test";
 
+/**
+ * Superficie que la infraestructura HTTP consume una vez ensamblados los casos
+ * de uso.
+ */
 export type Container = ApplicationServices;
 
+/**
+ * Construye las dependencias concretas segun `NODE_ENV` y los flags de
+ * adaptadores ya normalizados en `Config`.
+ *
+ * Los builders de entorno comparten la decision `USE_INMEMORY`: cuando esta
+ * activa ensamblan memoria; cuando no, ensamblan PostgreSQL.
+ */
 export function buildAppContext(config: Config, logger?: Logger): ConcreteAppContext {
   switch (config.NODE_ENV) {
     case "development":
@@ -26,6 +37,13 @@ export function buildAppContext(config: Config, logger?: Logger): ConcreteAppCon
   }
 }
 
+/**
+ * Ensambla los casos de uso de aplicacion sobre un contexto ya construido.
+ *
+ * La construccion de adaptadores queda fuera de esta funcion para mantener
+ * separados el cableado de infraestructura y la instanciacion de la capa de
+ * aplicacion.
+ */
 export function createContainer(context: AppContext): ApplicationServices {
   const addItemToOrder = new AddItemToOrder(context);
   const createOrder = new CreateOrder(context);

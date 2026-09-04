@@ -15,6 +15,13 @@ import { PostgresUnitOfWork } from "#infrastructure/persistence/postgres/Postgre
 import { InMemoryPriceProvider } from "#infrastructure/pricing/InMemoryPriceProvider";
 import { SystemClock } from "#infrastructure/time/SystemClock";
 
+/**
+ * Ensambla el contexto usado cuando `USE_INMEMORY` esta desactivado.
+ *
+ * Crea o reutiliza el pool PostgreSQL del proceso, construye la mensajeria a
+ * partir de `USE_OUTBOX` y entrega al `PostgresUnitOfWork` una factory capaz de
+ * crear el publicador de eventos con el cliente transaccional recibido.
+ */
 export function buildPostgresAppContext(
   config: Config,
   logger: Logger = LoggerFactory.createLogger(toPinoLoggerOptions(config)),

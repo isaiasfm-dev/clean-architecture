@@ -8,6 +8,19 @@ import type { ApplicationError, ValidationError } from "#application/errors/Appl
 import { CustomerId, Order, OrderId } from "#domain/entities/Order";
 import { fail, ok, type Result } from "#shared/result";
 
+/**
+ * Caso de uso que registra un pedido nuevo.
+ *
+ * Coordina `UnitOfWork`, `OrderRepository` y `DomainEventPublisher`. Dentro del
+ * limite de `UnitOfWork` se comprueba la existencia del pedido, se persiste el
+ * agregado y se entrega `order.created` al `eventBus` proporcionado por la
+ * unidad de trabajo. En adaptadores transaccionales, esas operaciones comparten
+ * la misma transaccion. Si el publicador falla, el error se devuelve como
+ * `Result` fallido para que la unidad de trabajo pueda abortar la operacion.
+ *
+ * Un resultado correcto contiene el identificador del pedido creado. Los fallos
+ * esperados son entrada invalida, pedido duplicado o fallo del publicador.
+ */
 export class CreateOrder {
   public constructor(private readonly context: CreateOrderContext) {}
 

@@ -20,6 +20,14 @@ export type MessagingOptions = {
   readonly outboxPollIntervalMs: number;
 };
 
+/**
+ * Construye los componentes de mensajeria a partir de las opciones de
+ * composicion.
+ *
+ * Puede seleccionar un publicador no-op o uno que persiste en Outbox. El
+ * dispatcher y el worker se crean por separado para que el punto de entrada
+ * decida si procesa una iteracion o mantiene el sondeo configurado.
+ */
 export class MessagingFactory {
   private readonly noopEventBus = new NoopDomainEventPublisher();
 
@@ -28,6 +36,10 @@ export class MessagingFactory {
     private readonly logger: Logger = new NoopLogger(),
   ) {}
 
+  /**
+   * Crea el publicador que usara una unidad de trabajo con el cliente
+   * PostgreSQL reservado para ella.
+   */
   public createEventBus(client: PoolClient): DomainEventPublisher {
     if (this.options.useOutbox) {
       return new DomainEventOutboxPublisher(client);
@@ -36,6 +48,12 @@ export class MessagingFactory {
     return this.noopEventBus;
   }
 
+  /**
+   * Crea el dispatcher con el tamano de lote configurado.
+   *
+   * Cuando no se proporciona un handler, usa uno que registra los metadatos
+   * del mensaje; la factory no construye aqui un consumidor externo.
+   */
   public createOutboxDispatcher(
     pool: Pool,
     handler: DomainEventOutboxHandler = this.createDefaultOutboxHandler(),
@@ -43,6 +61,9 @@ export class MessagingFactory {
     return new OutboxDispatcher(pool, handler, this.options.outboxBatchSize);
   }
 
+  /**
+   * Crea un worker con el modo y el intervalo definidos en la composicion.
+   */
   public createOutboxWorker(dispatcher: OutboxDispatcher): OutboxWorker {
     return new OutboxWorker(
       dispatcher,

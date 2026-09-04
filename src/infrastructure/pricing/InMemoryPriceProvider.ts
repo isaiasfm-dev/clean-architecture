@@ -3,6 +3,14 @@ import type { PriceProvider } from "#application/ports/PriceProvider";
 import { Price } from "#domain/value-objects/Price";
 import type { SKU } from "#domain/value-objects/SKU";
 
+/**
+ * Implementacion en memoria de `PriceProvider` con un catalogo fijo de
+ * precios en EUR.
+ *
+ * La consulta usa el valor del SKU como clave y devuelve `null` cuando no hay
+ * precio asociado. Los datos viven en la instancia y no se actualizan desde
+ * una fuente externa.
+ */
 export class InMemoryPriceProvider implements PriceProvider {
   private readonly prices = new Map<string, Price>([
     ["LAPTOP-001", Price.create(899.99, "EUR")],

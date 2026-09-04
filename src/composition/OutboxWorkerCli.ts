@@ -9,6 +9,15 @@ import { PostgresPoolFactory } from "#infrastructure/database/PostgresPoolFactor
 import { MessagingFactory } from "#infrastructure/messaging/MessagingFactory";
 import { LoggerFactory } from "#infrastructure/observability/LoggerFactory";
 
+/**
+ * Punto de entrada separado del servidor HTTP para procesar eventos pendientes
+ * del outbox.
+ *
+ * Si `USE_OUTBOX` esta desactivado, registra la situacion y termina. Si esta
+ * activo, construye el dispatcher y ejecuta el worker en el modo configurado
+ * (`once` o `loop`). Las senales de parada solicitan detener el worker y el
+ * bloque `finally` libera el pool PostgreSQL.
+ */
 async function runOutboxWorkerCli(): Promise<void> {
   const logger = LoggerFactory.createLogger(toPinoLoggerOptions(config)).child({
     operation: "outbox.worker",

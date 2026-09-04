@@ -43,6 +43,16 @@ const rawConfigSchema = z.object({
       .default(3000),
 });
 
+/**
+ * Configuracion normalizada que decide defaults de entorno y seleccion de
+ * adaptadores.
+ *
+ * `USE_INMEMORY` tiene prioridad sobre `USE_MEMORY`; `USE_MEMORY` se conserva
+ * como alias de compatibilidad. Si ninguno esta definido, los entornos
+ * `development` y `test` usan memoria y `production` usa PostgreSQL.
+ * `USE_OUTBOX` sigue la misma idea de defaults por entorno, activandose solo
+ * en `production` salvo configuracion explicita.
+ */
 export const configSchema = rawConfigSchema.transform((env) => ({
   NODE_ENV: env.NODE_ENV,
   DATABASE_URL: env.DATABASE_URL,
@@ -71,10 +81,19 @@ export const configSchema = rawConfigSchema.transform((env) => ({
 
 export type Config = z.infer<typeof configSchema>;
 
+/**
+ * Carga y valida variables de entorno en la forma consumida por composicion.
+ */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return configSchema.parse(env);
 }
 
+/**
+ * Obtiene la URL requerida por los adaptadores PostgreSQL.
+ *
+ * Separar esta comprobacion permite que la configuracion en memoria siga siendo
+ * valida aunque no exista `DATABASE_URL`.
+ */
 export function getDatabaseUrl(config: Config): string {
   if (!config.DATABASE_URL) {
     throw new Error("DATABASE_URL is required when using PostgreSQL.");

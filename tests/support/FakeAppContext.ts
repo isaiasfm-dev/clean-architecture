@@ -12,6 +12,13 @@ import type { SKU } from "#domain/value-objects/SKU";
 import { ok, type Result } from "#shared/result";
 import { FakeOrderRepository } from "./FakeOrderRepository.js";
 
+/**
+ * Sustituciones de dependencias para aislar un caso de uso en las pruebas.
+ *
+ * El contexto predeterminado usa un reloj fijo, un proveedor de precios que no
+ * encuentra precios y una unidad de trabajo que ejecuta la funcion recibida
+ * directamente, sin transaccion ni rollback.
+ */
 type FakeAppContextOverrides = Partial<AppContext> & {
   eventBus?: DomainEventPublisher;
 };
@@ -42,6 +49,10 @@ class FakeUnitOfWork implements UnitOfWork {
   }
 }
 
+/**
+ * Crea un contexto minimo de pruebas con dobles configurables para el
+ * repositorio, la unidad de trabajo y el publicador de eventos.
+ */
 export function createFakeAppContext(overrides: FakeAppContextOverrides = {}): AppContext {
   const orderRepository = overrides.orderRepository ?? new FakeOrderRepository();
   const eventBus = overrides.eventBus ?? new NoopEventBus();

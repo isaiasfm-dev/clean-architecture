@@ -6,6 +6,10 @@ export class InvalidPrice extends Error {
   }
 }
 
+/**
+ * Indica que una operacion monetaria mezclaria importes expresados en monedas
+ * distintas.
+ */
 export class CurrencyMismatch extends Error {
   public constructor(message = "Currency mismatch") {
     super(message);

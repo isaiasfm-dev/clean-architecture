@@ -5,6 +5,14 @@ import type { ApplicationError, ValidationError } from "#application/errors/Appl
 import { mapOrderToDto } from "#application/mappers/OrderMappers";
 import { fail, ok, type Result } from "#shared/result";
 
+/**
+ * Caso de uso de consulta que devuelve las lineas de un pedido.
+ *
+ * Lee el agregado mediante `OrderRepository` y lo traduce a DTO sin abrir una
+ * unidad de trabajo explicita. Un resultado correcto contiene las lineas y el
+ * total presentado por la capa de aplicacion; un pedido inexistente se
+ * representa como `not_found` en el `Result`.
+ */
 export class GetOrderItems {
   public constructor(private readonly context: GetOrderItemsContext) {}
 

@@ -1,6 +1,12 @@
 import type { OrderRepository } from "#application/ports/OrderRepository";
 import type { Order } from "#domain/entities/Order";
 
+/**
+ * Doble en memoria del puerto `OrderRepository` para pruebas de aplicacion.
+ *
+ * Conserva las mismas referencias de `Order` recibidas en `save`; no clona ni
+ * rehidrata agregados y no proporciona transacciones ni rollback.
+ */
 export class FakeOrderRepository implements OrderRepository {
   private readonly orders = new Map<string, Order>();
 

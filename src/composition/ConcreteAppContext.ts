@@ -7,6 +7,13 @@ import type { PostgresUnitOfWork } from "#infrastructure/persistence/postgres/Po
 import type { InMemoryPriceProvider } from "#infrastructure/pricing/InMemoryPriceProvider";
 import type { SystemClock } from "#infrastructure/time/SystemClock";
 
+/**
+ * Dependencias concretas usadas cuando la composicion selecciona adaptadores
+ * en memoria.
+ *
+ * Incluye `eventBus` porque el `InMemoryUnitOfWork` recibe una instancia
+ * compartida al construirse.
+ */
 export type InMemoryAppContext = {
   orderRepository: InMemoryOrderRepository;
   unitOfWork: InMemoryUnitOfWork;
@@ -15,6 +22,12 @@ export type InMemoryAppContext = {
   clock: SystemClock;
 };
 
+/**
+ * Dependencias concretas usadas cuando la composicion selecciona PostgreSQL.
+ *
+ * A diferencia de `AppContext`, este tipo conserva las clases concretas que se
+ * han ensamblado para el proceso.
+ */
 export type PostgresAppContext = {
   orderRepository: PostgresOrderRepository;
   unitOfWork: PostgresUnitOfWork;
@@ -22,4 +35,8 @@ export type PostgresAppContext = {
   clock: SystemClock;
 };
 
+/**
+ * Union de contextos concretos capaz de satisfacer los puertos que consumen los
+ * casos de uso.
+ */
 export type ConcreteAppContext = InMemoryAppContext | PostgresAppContext;

@@ -15,6 +15,10 @@ export function CustomerId(value: string): CustomerId {
   return value as CustomerId;
 }
 
+/**
+ * Eventos que el agregado `Order` puede dejar pendientes para la capa de
+ * aplicacion.
+ */
 export type OrderDomainEvent = DomainEvent & {
   readonly aggregateType: "Order";
   readonly type: "order.created" | "order.item_added";
@@ -28,12 +32,23 @@ type OrderItem = {
 
 export type OrderItemSnapshot = OrderItem;
 
+/**
+ * Estado suficiente para reconstruir un pedido persistido sin tratarlo como
+ * una nueva decision de negocio.
+ */
 export type OrderSnapshot = {
   readonly id: OrderId;
   readonly customerId: CustomerId;
   readonly items: readonly OrderItemSnapshot[];
 };
 
+/**
+ * Agregado raiz de pedidos.
+ *
+ * El agregado registra eventos de dominio cuando se crean pedidos nuevos o se
+ * anaden lineas. La rehidratacion, en cambio, solo reconstruye estado ya
+ * existente y por eso no genera eventos pendientes.
+ */
 export class Order {
   private readonly items: OrderItem[] = [];
   private readonly domainEvents: OrderDomainEvent[] = [];
@@ -43,6 +58,9 @@ export class Order {
     public readonly customerId: CustomerId,
   ) {}
 
+  /**
+   * Crea un pedido nuevo y deja pendiente el evento `order.created`.
+   */
   public static create(id: OrderId, customerId: CustomerId): Order {
     const order = new Order(id, customerId);
 
@@ -55,6 +73,11 @@ export class Order {
     return order;
   }
 
+  /**
+   * Reconstruye un pedido desde persistencia sin emitir eventos de dominio.
+   *
+   * Usar `create` aqui publicaria de nuevo hechos que ya ocurrieron.
+   */
   public static rehydrate(snapshot: OrderSnapshot): Order {
     const order = new Order(snapshot.id, snapshot.customerId);
 
@@ -63,6 +86,9 @@ export class Order {
     return order;
   }
 
+  /**
+   * Anade una linea al pedido y deja pendiente el evento `order.item_added`.
+   */
   public addItem(sku: SKU, price: Price, quantity: Quantity): void {
     this.items.push({ sku, price, quantity });
     this.domainEvents.push({
@@ -76,6 +102,11 @@ export class Order {
     return this.items.map((item) => ({ ...item }));
   }
 
+  /**
+   * Calcula el total a partir de las lineas actuales del pedido.
+   *
+   * @throws Error Si el pedido no tiene lineas.
+   */
   public total(): Price {
     const [firstItem, ...otherItems] = this.items;
 
@@ -89,6 +120,9 @@ export class Order {
     );
   }
 
+  /**
+   * Entrega los eventos pendientes y vacia el buffer interno del agregado.
+   */
   public pullDomainEvents(): OrderDomainEvent[] {
     const events = [...this.domainEvents];
 

@@ -1,66 +1,33 @@
 # Clean Architecture TypeScript Practice
 
-Practica breve de Clean Architecture en TypeScript. La aplicacion separa dominio, casos de uso, infraestructura HTTP, configuracion y composicion.
+Laboratorio demostrativo de una API de pedidos construida con TypeScript. El proyecto muestra, de forma practica, como organizar un dominio, casos de uso, puertos, adaptadores, composicion de dependencias, persistencia PostgreSQL y el patron Outbox.
 
-El arranque sigue este flujo:
+No es una plataforma de comercio electronico completa ni implementa autenticacion, pagos u otras garantias operativas fuera del alcance de este ejemplo.
 
-```txt
-config -> buildAppContext -> createContainer -> buildServer
+## Arquitectura
+
+Las dependencias apuntan hacia dentro: el dominio no conoce la aplicacion ni la infraestructura; la aplicacion depende de puertos; y la composicion conecta esos puertos con adaptadores concretos.
+
+| Capa | Responsabilidad |
+| --- | --- |
+| `domain` | Entidades, Value Objects, invariantes y eventos de dominio. |
+| `application` | Casos de uso, DTO, puertos y coordinacion de la aplicacion. |
+| `infrastructure` | Adaptadores HTTP, PostgreSQL, Outbox, logging, reloj y precios en memoria. |
+| `composition` | Configuracion y composicion manual de dependencias por entorno. |
+| `shared` | Contratos utilitarios compartidos, como `Result`. |
+
+```mermaid
+flowchart TD
+    HTTP["Peticion HTTP"] --> HC["Scope y controlador"]
+    HC --> UC["Caso de uso"]
+    UC --> D["Dominio"]
+    UC --> P["Puerto"]
+    P --> A["Adaptador concreto"]
 ```
 
-## Flujo De Capas
+La construccion del proceso sigue `config -> buildAppContext -> createContainer -> buildServer`. En una peticion, el resultado del caso de uso vuelve al controlador, que lo presenta como respuesta HTTP.
 
-Diagrama general, desde el punto de entrada hacia las capas internas:
-
-```txt
-main.ts
-  |
-  v
-composition
-  - adapterOptions.ts
-  - config.ts
-  - container.ts
-  - environments/*
-  - lifetimes.ts
-  - OutboxWorkerCli.ts
-  |
-  v
-infrastructure/http
-  - server.ts
-  - OrderController.ts
-  - scope.ts
-infrastructure/database
-  - PostgresPoolFactory.ts
-infrastructure/messaging
-  - MessagingFactory.ts
-  - DomainEventOutboxPublisher.ts
-  - OutboxDispatcher.ts
-infrastructure/observability
-  - LoggerFactory.ts
-  - PinoLogger.ts
-  - NoopLogger.ts
-  |
-  v
-application
-  - ApplicationServices.ts
-  - AppContext.ts
-  - use-cases/*
-  - ports/*
-  |
-  v
-domain
-  - entities/*
-  - value-objects/*
-  - events/*
-```
-
-Regla principal: las dependencias apuntan hacia dentro. `domain` no conoce `application`, `infrastructure` ni `composition`. Los casos de uso dependen de puertos abstractos; las implementaciones concretas se eligen en `composition`.
-
-Las operaciones de escritura se coordinan mediante el puerto `UnitOfWork`, de forma que los adaptadores reales puedan ejecutar repositorios dentro de una misma transaccion.
-
-La composicion traduce `Config` a opciones explicitas de adaptador antes de instanciar infraestructura. `PostgresPoolFactory` crea y gestiona el pool PostgreSQL; `MessagingFactory` crea el publisher transaccional de eventos de dominio, el dispatcher y el worker de outbox; `LoggerFactory` crea el logger estructurado.
-
-La observabilidad se expone mediante el puerto `Logger` en `application/ports`. La implementacion actual usa Pino en `infrastructure/observability`, con `NoopLogger` para escenarios donde no se quiera emitir logs.
+En las escrituras con PostgreSQL, `PostgresUnitOfWork` coordina la persistencia del agregado y la insercion de sus eventos en `outbox` cuando esta habilitado `DomainEventOutboxPublisher`. El worker Outbox se ejecuta como proceso separado.
 
 ## Casos De Uso
 
@@ -78,262 +45,112 @@ La capa de aplicacion expone casos de uso pequenos y orientados a una intencion 
 
 - Node.js 22 o superior.
 - npm.
-- Docker instalado y en ejecucion, con Docker Compose disponible, si se quiere ejecutar PostgreSQL local mediante `npm run db:up`.
-- PostgreSQL accesible, si se ejecuta con `USE_INMEMORY=false` sin usar Docker.
-
-En Linux, el usuario que ejecuta los comandos debe tener permisos para usar Docker. Comprobarlo con:
-
-```bash
-docker ps
-```
-
-Si devuelve `permission denied while trying to connect to the docker API`, anadir el usuario al grupo `docker` y volver a iniciar sesion:
-
-```bash
-sudo usermod -aG docker "$USER"
-newgrp docker
-docker ps
-```
-
-Evita usar `sudo npm run db:up` salvo como solucion temporal, porque despues `npm run db:migrate` tambien necesitara acceder a Docker y puede fallar por permisos.
-
-En Windows, para usar PostgreSQL con Docker:
-
-- Instalar Docker Desktop.
-- Activar el backend WSL 2 en Docker Desktop.
-- Tener la virtualizacion habilitada en BIOS/UEFI.
-- Arrancar Docker Desktop antes de ejecutar `npm run db:up`.
-- Ejecutar los comandos desde PowerShell, Windows Terminal o una terminal WSL. Si se usa WSL, es recomendable trabajar con el proyecto dentro del filesystem Linux de WSL.
+- Docker y Docker Compose, si se quiere ejecutar PostgreSQL local.
+- PostgreSQL accesible si se usa `USE_INMEMORY=false` sin Docker.
 
 ## Instalacion
 
-Con los requisitos previos instalados, preparar dependencias:
+Instala las dependencias con `npm ci` para usar el `package-lock.json`, o con `npm install` durante el desarrollo.
+
+La aplicacion puede ejecutarse con persistencia en memoria o PostgreSQL:
+
+- En `development` y `test`, el modo memoria es el predeterminado.
+- Con `USE_INMEMORY=false`, se seleccionan los adaptadores PostgreSQL y se requiere `DATABASE_URL`.
+- En `production`, PostgreSQL y Outbox son los valores predeterminados, aunque los flags pueden sobrescribirlos.
+
+## Configuracion
+
+La aplicacion carga `.env` y `process.env`; las variables presentes en `process.env` prevalecen. Para PostgreSQL local, Docker Compose y el script de migraciones usan `.env.db`. El script requiere `POSTGRES_USER` y `POSTGRES_DB`; la aplicacion requiere ademas `DATABASE_URL`.
+
+Para preparar el escenario local de PostgreSQL con Outbox, copia los ejemplos:
 
 ```bash
-npm install
+cp .env.example .env
+cp .env.db.example .env.db
 ```
 
-Para una instalacion reproducible en CI o desde `package-lock.json`:
+`.env` configura la aplicacion; `.env.db` configura PostgreSQL local y el script de migraciones.
 
-```bash
-npm ci
-```
+Variables principales:
 
-La aplicacion puede ejecutarse en memoria o con PostgreSQL:
+| Variable | Uso |
+| --- | --- |
+| `NODE_ENV` | Selecciona `development`, `test` o `production`. |
+| `USE_INMEMORY` | Selecciona persistencia en memoria o PostgreSQL. |
+| `USE_MEMORY` | Alias de compatibilidad de `USE_INMEMORY`. |
+| `DATABASE_URL` | Conexion requerida al usar PostgreSQL. |
+| `USE_OUTBOX` | Activa el publisher Outbox cuando se usa PostgreSQL. |
+| `OUTBOX_WORKER_MODE` | `once` o `loop`. |
+| `OUTBOX_BATCH_SIZE` | Tamano maximo de cada lote del dispatcher. |
+| `OUTBOX_POLL_INTERVAL_MS` | Espera entre lotes en modo `loop`. |
+| `LOG_LEVEL` y `LOG_PRETTY` | Nivel y formato de salida del logger Pino. |
+| `PORT` | Puerto HTTP. |
 
-- Modo memoria: no necesita base de datos ni migraciones. Es el modo por defecto en `development` y `test`.
-- Modo PostgreSQL: requiere `DATABASE_URL`, arrancar la base de datos y aplicar migraciones antes de levantar la aplicacion.
+El resto de opciones de base de datos, precios y logging se valida y normaliza en `src/composition/config.ts`.
 
-### Archivos De Entorno
+## Comandos
 
-La aplicacion puede arrancar en modo memoria sin crear `.env`; `src/composition/config.ts` aplica valores por defecto. Para usar PostgreSQL, se necesita configurar la conexion mediante `.env` o variables de entorno inline.
-
-Ejemplo minimo de `.env` para PostgreSQL local:
-
-```env
-NODE_ENV=development
-USE_INMEMORY=false
-USE_OUTBOX=true
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture
-```
-
-Los comandos Docker usan `.env.db`. Este archivo es necesario para `npm run db:up`, `npm run db:down` y `npm run db:migrate`, porque los scripts invocan Docker Compose con `--env-file .env.db` y la migracion lee `POSTGRES_USER` y `POSTGRES_DB` desde ese archivo.
-
-Ejemplo minimo de `.env.db`:
-
-```env
-POSTGRES_VERSION=16-alpine
-POSTGRES_CONTAINER_NAME=clean-architecture-postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=clean_architecture
-POSTGRES_PORT=5432
-```
-
-Arrancar PostgreSQL local:
-
-```bash
-npm run db:up
-```
-
-Aplicar migraciones:
-
-```bash
-npm run db:migrate
-```
-
-Ejecuta `npm run db:migrate` despues de arrancar la base de datos por primera vez y cada vez que haya cambios nuevos en `db/migrations`. La migracion `003_add_outbox.sql` crea la tabla `outbox` usada por el publisher transaccional de eventos de dominio.
-
-## Ejecutar
+Desarrollo:
 
 ```bash
 npm run dev
 ```
 
-Por defecto arranca en:
-
-```txt
-http://localhost:3000
-```
-
-Cada respuesta HTTP incluye un header `x-request-id`, generado por request.
-
-Con `LOG_LEVEL=debug`, cada request HTTP registra metadata segura al recibirse y al completarse. No se registra el `body` completo. Los errores controlados de aplicacion, como validacion, no encontrado o conflicto, se registran con `warn`; los fallos de dependencias se registran con `error`.
-
-Con `LOG_PRETTY=true`, la marca de tiempo se muestra con fecha corta local y hora, por ejemplo `[04/09/2026 10:07:46.328]`.
-
-## Variables De Entorno
-
-La configuracion de aplicacion se carga desde `.env` y `process.env` en `src/composition/config.ts`. Las variables presentes en `process.env` tienen prioridad sobre las definidas en `.env`.
-
-El fichero `.env.db` se usa para Docker Compose y las migraciones de base de datos. No forma parte de la configuracion de aplicacion.
-
-Variables soportadas:
-
-| Variable | Valores | Defecto | Uso |
-| --- | --- | --- | --- |
-| `NODE_ENV` | `development`, `test`, `production` | `development` | Selecciona la composicion por entorno. |
-| `DATABASE_URL` | URL valida | requerida con `USE_INMEMORY=false` | Conexion PostgreSQL para adaptadores de BBDD reales. |
-| `DATABASE_POOL_MAX` | numero entero positivo | `10` | Numero maximo de conexiones abiertas en el pool PostgreSQL. |
-| `DATABASE_IDLE_TIMEOUT_MS` | numero entero positivo | `30000` | Tiempo maximo de una conexion inactiva antes de cerrarla. |
-| `DATABASE_CONNECTION_TIMEOUT_MS` | numero entero positivo | `2000` | Tiempo maximo esperando abrir una conexion antes de fallar. |
-| `PRICING_BASE_URL` | URL valida | `http://localhost:4000` | Base URL para un futuro servicio de precios HTTP. |
-| `USE_INMEMORY` | `true`, `false` | `true` en dev/test, `false` en production | Activa adaptadores en memoria. |
-| `USE_MEMORY` | `true`, `false` | alias de `USE_INMEMORY` | Compatibilidad con el nombre anterior. |
-| `USE_OUTBOX` | `true`, `false` | `false` en dev/test, `true` en production | Activa el outbox transaccional cuando se usan adaptadores PostgreSQL. |
-| `OUTBOX_WORKER_MODE` | `once`, `loop` | `once` | Define si el worker procesa un lote y termina o queda consultando periodicamente. |
-| `OUTBOX_POLL_INTERVAL_MS` | numero entero positivo | `5000` | Intervalo entre lotes cuando `OUTBOX_WORKER_MODE=loop`. |
-| `OUTBOX_BATCH_SIZE` | numero entero positivo | `100` | Numero maximo de eventos pendientes que procesa cada lote del dispatcher. |
-| `LOG_LEVEL` | `debug`, `info`, `warn`, `error`, `silent` | `debug` en dev, `silent` en test, `info` en production | Nivel de logs configurado por entorno. |
-| `LOG_PRETTY` | `true`, `false` | `true` en dev, `false` en test/production | Activa salida de logs legible para desarrollo. |
-| `PRICING_TIMEOUT_MS` | numero entero positivo | `5000` en dev/test, `1000` en production | Timeout previsto para pricing externo. |
-| `PORT` | numero entero positivo | `3000` | Puerto HTTP. |
-
-Ejecutar con puerto personalizado:
+Build y ejecucion del resultado compilado:
 
 ```bash
-PORT=4001 npm run dev
+npm run build
+npm run start
 ```
 
-Ejecutar con PostgreSQL sin outbox:
-
-```bash
-USE_INMEMORY=false USE_OUTBOX=false DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run dev
-```
-
-Ejecutar con PostgreSQL y outbox:
-
-```bash
-USE_INMEMORY=false USE_OUTBOX=true DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run dev
-```
-
-Despachar eventos pendientes del outbox:
-
-```bash
-USE_OUTBOX=true DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run worker:outbox
-```
-
-Despachar eventos pendientes en bucle cada segundo y con lotes de 50 eventos:
-
-```bash
-USE_OUTBOX=true OUTBOX_WORKER_MODE=loop OUTBOX_POLL_INTERVAL_MS=1000 OUTBOX_BATCH_SIZE=50 DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run worker:outbox
-```
-
-Ejecutar en modo test:
-
-```bash
-NODE_ENV=test npm test
-```
-
-Arrancar temporalmente en production usando memoria:
-
-```bash
-NODE_ENV=production USE_INMEMORY=true USE_OUTBOX=false npm run dev
-```
-
-Arrancar con `NODE_ENV=production` sin `USE_INMEMORY=true` usa PostgreSQL. En ese caso `DATABASE_URL` es obligatoria:
-
-```bash
-NODE_ENV=production DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run dev
-```
-
-## Modos De Persistencia Y Eventos
-
-La decision de adaptadores se toma en `composition` a partir de `USE_INMEMORY` y `USE_OUTBOX`.
-
-| Variables | Persistencia | Eventos |
-| --- | --- | --- |
-| `USE_INMEMORY=true` | Repositorio en memoria | `NoopDomainEventPublisher`, no persiste outbox. |
-| `USE_INMEMORY=false USE_OUTBOX=false` | PostgreSQL | `NoopDomainEventPublisher` dentro de la transaccion. |
-| `USE_INMEMORY=false USE_OUTBOX=true` | PostgreSQL | `DomainEventOutboxPublisher` dentro de la transaccion. |
-
-Con outbox activo, los eventos de dominio se insertan en `outbox` en la misma transaccion que los cambios de negocio. El dispatcher lee eventos no publicados con `FOR UPDATE SKIP LOCKED` y marca `published_at` cuando los procesa.
-
-## Proceso Outbox
-
-En esta practica el proceso outbox se mantiene separado del servidor HTTP y no se arranca automaticamente con `npm run dev`.
-
-### Secuencia Para PostgreSQL Con Outbox
-
-Configuracion de aplicacion esperada en `.env` o en variables de entorno:
-
-```env
-USE_INMEMORY=false
-USE_OUTBOX=true
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture
-OUTBOX_WORKER_MODE=once
-OUTBOX_BATCH_SIZE=100
-OUTBOX_POLL_INTERVAL_MS=5000
-```
-
-`OUTBOX_WORKER_MODE`, `OUTBOX_BATCH_SIZE` y `OUTBOX_POLL_INTERVAL_MS` son opcionales si se aceptan sus valores por defecto. `OUTBOX_POLL_INTERVAL_MS` solo se usa cuando `OUTBOX_WORKER_MODE=loop`.
-
-La configuracion del contenedor local de PostgreSQL esta en `.env.db`:
-
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=clean_architecture
-POSTGRES_PORT=5432
-```
-
-Secuencia de ejecucion recomendada:
-
-1. Arrancar PostgreSQL.
-2. Aplicar migraciones.
-3. Arrancar la aplicacion con `USE_INMEMORY=false USE_OUTBOX=true`.
-4. Ejecutar operaciones HTTP que generen eventos.
-5. Lanzar manualmente el worker para procesar los eventos pendientes.
-
-Ejemplo completo:
+PostgreSQL y migraciones:
 
 ```bash
 npm run db:up
 npm run db:migrate
-USE_INMEMORY=false USE_OUTBOX=true DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run dev
+npm run db:down
 ```
 
-Con el servidor arrancado, generar eventos desde otra terminal:
+El modo memoria no necesita PostgreSQL ni migraciones. El script de migraciones usa Docker Compose y aplica los archivos de `db/migrations` en orden.
+
+Worker Outbox:
 
 ```bash
-curl -i -X POST http://localhost:3000/orders \
-  -H "Content-Type: application/json" \
-  -d '{"orderId":"order-1","customerId":"customer-1"}'
+npm run worker:outbox
+OUTBOX_WORKER_MODE=loop npm run worker:outbox
 ```
 
-Despues, procesar la cola outbox desde otra terminal:
+El worker es un proceso separado del servidor HTTP.
+
+Validacion local:
 
 ```bash
-USE_OUTBOX=true DATABASE_URL=postgres://postgres:postgres@localhost:5432/clean_architecture npm run worker:outbox
+npm run check
+npm run check:tests
+npm test
 ```
 
-El servidor HTTP solo registra eventos en la tabla `outbox`. Si el worker no se ejecuta, los eventos quedan pendientes con `published_at = NULL`.
+`npm run validate` agrupa esos tres comandos.
 
-Por defecto, `worker:outbox` usa `OUTBOX_WORKER_MODE=once`: procesa un lote de hasta `OUTBOX_BATCH_SIZE` eventos, marca `published_at` y termina. Para dejarlo corriendo, usar `OUTBOX_WORKER_MODE=loop`; en ese modo espera `OUTBOX_POLL_INTERVAL_MS` entre lotes y registra en consola que queda esperando al siguiente lote.
+CI:
 
-En modo `loop`, el proceso puede detenerse con `Ctrl+C` o enviando `SIGTERM`. El worker ejecuta una parada ordenada: termina el lote en curso, evita arrancar otro lote y libera el pool de conexiones.
+El workflow de GitHub Actions instala con `npm ci` y ejecuta exactamente `npm run check` y `npm test`. No ejecuta `build`, `check:tests` ni `npm run validate`.
 
-Este diseno es intencionado para la practica: permite observar la diferencia entre registrar eventos transaccionalmente y publicarlos despues, sin introducir un proceso background automatico dentro del servidor HTTP. En un entorno productivo, el worker normalmente se ejecutaria como proceso separado y continuo, o mediante un scheduler.
+## Observabilidad
+
+El servidor genera un `requestId` por peticion y lo devuelve en `x-request-id`; su uso es local al proceso y no proporciona trazabilidad distribuida. Se registran metadatos seleccionados de la peticion y se evita registrar el `body` completo.
+
+La implementacion normal usa Pino. `NoopLogger` permite construir componentes sin salida de logs. No existe redaccion automatica general de secretos.
+
+## Persistencia Y Outbox
+
+Con `USE_INMEMORY=true`, la persistencia vive en memoria y los eventos usan un publicador no-op. Con PostgreSQL, `PostgresUnitOfWork` y `DomainEventOutboxPublisher` pueden guardar el agregado y sus eventos en la misma transaccion. El dispatcher procesa despues los registros pendientes.
+
+`once` ejecuta una iteracion y `loop` continua procesando lotes con una espera entre iteraciones. El handler predeterminado solo registra el evento; no hay un consumidor externo implementado.
+
+El sistema no implementa entrega exactamente una vez, idempotencia del consumidor, politica explicita de reintentos, backoff ni dead-letter queue.
+
+El detalle de invariantes, transacciones, rehidratacion y procesamiento Outbox esta documentado junto a sus implementaciones.
 
 ## URLs Operativas
 
@@ -490,18 +307,26 @@ Respuesta:
 }
 ```
 
-## Validacion
+## Estructura
 
-```bash
-npm run check
-npm run check:tests
-npm test
+```text
+src/
+  domain/
+  application/
+  infrastructure/
+  composition/
+  shared/
+tests/
+scripts/
+db/migrations/
 ```
 
-Para ejecutar la validacion completa desde consola:
+## Validacion
+
+Validacion local completa:
 
 ```bash
 npm run validate
 ```
 
-`npm run check` valida el codigo de produccion, `npm run check:tests` valida tambien fixtures y specs bajo `tests/`, y `npm test` ejecuta la suite con Vitest.
+Este comando ejecuta `npm run check`, `npm run check:tests` y `npm test`.

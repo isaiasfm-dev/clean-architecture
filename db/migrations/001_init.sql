@@ -1,4 +1,8 @@
 -- db/migrations/001_init.sql
+-- El esquema separa el agregado persistido de sus lineas: `order_items.order_id`
+-- referencia al identificador externo del pedido y las elimina con el pedido.
+-- Las restricciones de esta migracion cubren integridad de almacenamiento;
+-- las invariantes adicionales del dominio siguen aplicandose en la aplicacion.
 CREATE TABLE IF NOT EXISTS orders (
   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   order_id text NOT NULL,

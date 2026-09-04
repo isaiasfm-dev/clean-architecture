@@ -7,6 +7,12 @@ import type { DomainEvent } from "#domain/events/DomainEvent";
 import { NoopLogger } from "#infrastructure/observability/NoopLogger";
 import { fail, ok, type Result } from "#shared/result";
 
+/**
+ * Mensaje que el dispatcher adapta desde una fila del Outbox para el handler.
+ *
+ * `payload` conserva el evento de dominio cuando su estructura es valida;
+ * si no, se reconstruye con los campos minimos almacenados en la fila.
+ */
 export type DomainEventOutboxMessage = {
   readonly id: string;
   readonly aggregateId: string;
@@ -16,6 +22,10 @@ export type DomainEventOutboxMessage = {
   readonly createdAt: Date;
 };
 
+/**
+ * Handler invocado para cada mensaje seleccionado antes de marcarlo como
+ * publicado.
+ */
 export type DomainEventOutboxHandler = (event: DomainEventOutboxMessage) => Promise<void>;
 export type OutboxWorkerMode = "once" | "loop";
 export type Sleep = (intervalMs: number) => Promise<void>;
@@ -29,6 +39,18 @@ type OutboxRow = {
   readonly created_at: Date;
 };
 
+/**
+ * Procesa los registros pendientes del Outbox y los marca como publicados
+ * despues de invocar el handler.
+ *
+ * Una fila esta pendiente cuando `published_at IS NULL`; cada iteracion toma
+ * como maximo `batchSize` filas y la consulta las ordena por `id` ascendente.
+ * La seleccion y el marcado usan el mismo cliente; el handler se invoca
+ * dentro de esa transaccion, aunque sus efectos externos no usan ese cliente.
+ * Estas operaciones se ejecutan entre `BEGIN` y `COMMIT`. `FOR UPDATE SKIP LOCKED`
+ * permite que transacciones concurrentes omitan filas ya bloqueadas por otro dispatcher, sin convertir
+ * por si solo el procesamiento en una garantia de entrega unica.
+ */
 export class OutboxDispatcher {
   public constructor(
     private readonly pool: Pool,
@@ -36,6 +58,14 @@ export class OutboxDispatcher {
     private readonly batchSize = 100,
   ) {}
 
+  /**
+   * Ejecuta una iteracion de procesamiento y devuelve cuantas filas se
+   * seleccionaron para el lote confirmado.
+   *
+   * Un error antes del commit provoca `ROLLBACK`; por tanto, el marcado de las
+   * filas no se confirma. El efecto externo que el handler pudiera producir
+   * no forma parte de la transaccion PostgreSQL.
+   */
   public async dispatchPending(): Promise<Result<number, ApplicationError>> {
     const client = await this.pool.connect();
 
@@ -88,6 +118,8 @@ export class OutboxDispatcher {
   }
 
   private async markAsPublished(client: PoolClient, eventId: string): Promise<void> {
+    // El marcado se confirma junto con la iteracion para no separar la
+    // seleccion bloqueada del estado publicado persistido.
     await client.query(
       `
       UPDATE outbox
@@ -103,6 +135,9 @@ export class OutboxDispatcher {
       return row.event_data;
     }
 
+    // Si el JSON no tiene la forma minima de DomainEvent, se conserva la
+    // informacion del registro para que el handler reciba un evento valido
+    // segun el contrato minimo del dominio.
     return {
       aggregateId: row.aggregate_id,
       aggregateType: row.aggregate_type,
@@ -124,6 +159,14 @@ export class OutboxDispatcher {
   }
 }
 
+/**
+ * Ejecuta iteraciones del dispatcher una vez o hasta que se solicite detener
+ * el worker.
+ *
+ * En modo `loop`, espera el intervalo configurado entre lotes y puede
+ * interrumpir la espera mediante `stop`; el worker no implementa una politica
+ * adicional de reintentos o de entrega externa.
+ */
 export class OutboxWorker {
   private stopped = false;
   private stopWaiting: (() => void) | null = null;
@@ -136,6 +179,7 @@ export class OutboxWorker {
     private readonly sleep?: Sleep,
   ) {}
 
+  /** Solicita detener el worker y despierta una espera activa, si existe. */
   public stop(): void {
     this.stopped = true;
     this.logger.info("outbox worker stopping", { operation: "outbox.worker.stop" });

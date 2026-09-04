@@ -9,6 +9,12 @@ import { fail, ok, type Result } from "#shared/result";
 
 type QueryExecutor = Pick<Pool | PoolClient, "query">;
 
+/**
+ * Representacion persistida de un evento de dominio en la tabla Outbox.
+ *
+ * `event_data` conserva el evento completo para que el dispatcher pueda
+ * reconstruir el mensaje sin perder datos propios de eventos concretos.
+ */
 export interface OutboxRecord {
   readonly id: string;
   readonly aggregate_id: string;
@@ -18,9 +24,24 @@ export interface OutboxRecord {
   readonly created_at: Date;
 }
 
+/**
+ * Implementacion de `DomainEventPublisher` que registra los eventos en
+ * PostgreSQL para su procesamiento posterior por un dispatcher.
+ *
+ * Recibe un `PoolClient` cuando se usa dentro de `PostgresUnitOfWork`, por lo
+ * que las inserciones del Outbox participan en la misma transaccion que la
+ * persistencia del agregado. Esto solo deja el evento almacenado; no implica
+ * que ya haya sido entregado a un consumidor externo.
+ */
 export class DomainEventOutboxPublisher implements DomainEventPublisher {
   public constructor(private readonly executor: QueryExecutor) {}
 
+  /**
+   * Persiste cada evento con sus identificadores de agregado, tipo y payload.
+   *
+   * Una coleccion vacia se resuelve sin consultar la base de datos. Los
+   * errores del ejecutor se convierten en un `Result` de fallo de dependencia.
+   */
   public async publish(events: DomainEvent[]): Promise<Result<void, ApplicationError>> {
     if (events.length === 0) {
       return ok(undefined);

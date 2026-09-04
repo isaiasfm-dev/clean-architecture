@@ -5,6 +5,10 @@ import path from "node:path";
 
 import { config as loadDotenv } from "dotenv";
 
+/**
+ * Opciones de entrada para una invocacion de `psql` dentro del servicio
+ * PostgreSQL definido por Docker Compose.
+ */
 type PsqlOptions = {
   readonly input?: string;
   readonly args?: readonly string[];
@@ -121,6 +125,13 @@ async function findAppliedPreviousMigration(migrationName: string): Promise<stri
   return result.trim();
 }
 
+/**
+ * Aplica una migracion individual y la registra en `schema_migrations` solo
+ * despues de ejecutar su contenido dentro de una transaccion propia.
+ *
+ * La transaccion cubre el SQL de la migracion y su registro de aplicacion; no
+ * agrupa varias migraciones en una unica transaccion.
+ */
 async function applyMigration(migrationName: string, previousMigration: string): Promise<void> {
   const migrationPath = path.join(migrationsDir, migrationName);
   const sql = await readFile(migrationPath, "utf8");
@@ -143,6 +154,15 @@ COMMIT;
   });
 }
 
+/**
+ * Descubre y aplica las migraciones SQL pendientes en orden lexicografico.
+ *
+ * `schema_migrations` conserva el nombre y la migracion anterior esperada,
+ * permitiendo saltar migraciones ya aplicadas y detectar una cadena de
+ * dependencias distinta de la registrada. La configuracion de Docker Compose
+ * y PostgreSQL se obtiene de `.env.db` y de las variables usadas por el
+ * script.
+ */
 async function migrate(): Promise<void> {
   await ensureMigrationsTable();
 

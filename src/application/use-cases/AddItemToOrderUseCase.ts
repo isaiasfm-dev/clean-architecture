@@ -7,6 +7,21 @@ import { Quantity } from "#domain/value-objects/Quantity";
 import { SKU } from "#domain/value-objects/SKU";
 import { fail, ok, type Result } from "#shared/result";
 
+/**
+ * Caso de uso que incorpora una linea a un pedido existente.
+ *
+ * Coordina `UnitOfWork`, `OrderRepository`, `PriceProvider`, `Clock` y
+ * `DomainEventPublisher`. La unidad de trabajo envuelve la lectura del pedido,
+ * la mutacion del agregado, su persistencia y la entrega de `order.item_added`
+ * al `eventBus` proporcionado por ella. En adaptadores transaccionales, esas
+ * operaciones comparten transaccion; la consulta al proveedor de precios
+ * participa en el flujo, pero su atomicidad depende de la implementacion
+ * concreta del puerto.
+ *
+ * Un resultado correcto describe la linea anadida con el precio vigente y el
+ * instante usado para solicitarlo. Los fallos esperados son entrada invalida,
+ * pedido inexistente, precio no disponible o fallo del publicador.
+ */
 export class AddItemToOrder {
   public constructor(private readonly context: AddItemToOrderContext) {}
 

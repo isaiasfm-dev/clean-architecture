@@ -13,6 +13,13 @@ export type PinoLoggerFactoryOptions = {
   readonly pretty: boolean;
 };
 
+/**
+ * Construye la implementacion Pino del puerto `Logger` a partir de las
+ * opciones de observabilidad de la composicion.
+ *
+ * `pretty` solo anade el transporte `pino-pretty` y su formato de tiempo;
+ * cuando esta desactivado se conserva la configuracion estructurada de Pino.
+ */
 export class LoggerFactory {
   public static createLogger(factoryOptions: PinoLoggerFactoryOptions): Logger {
     const loggerOptions: LoggerOptions = {

@@ -36,6 +36,14 @@ type FindOrdersByCustomerIdRequest = FastifyRequest<{
   };
 }>;
 
+/**
+ * Adaptador HTTP de entrada para los casos de uso de pedidos.
+ *
+ * Convierte los datos tipados de Fastify en las entradas de aplicacion,
+ * presenta los `Result` fallidos mediante `presentApplicationError` y
+ * registra el resultado de la peticion sin asumir responsabilidades
+ * transaccionales del controlador.
+ */
 export class OrdersController {
   public constructor(
     private readonly orders: OrdersUseCases,
@@ -179,6 +187,10 @@ export class OrdersController {
   }
 }
 
+/**
+ * Crea handlers enlazados a una instancia del controlador para conservar su
+ * contexto al registrarlos como rutas de Fastify.
+ */
 export function makeOrdersController(useCases: OrdersUseCases, logger?: Logger) {
   const controller = new OrdersController(useCases, logger);
 

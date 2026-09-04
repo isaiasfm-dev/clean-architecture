@@ -4,6 +4,8 @@ import type { ListedOrderDto } from "#application/dtos/ListOrdersDto";
 import type { OrderDto } from "#application/dtos/OrderDto";
 import type { Order } from "#domain/entities/Order";
 
+// La capa de aplicacion expone pedidos sin lineas como total 0 EUR;
+// `Order.total()` pertenece al dominio y rechaza ese estado.
 function orderTotalDto(order: Order) {
   const orderItems = order.itemsSnapshot();
   const orderTotal = orderItems.length > 0 ? order.total() : null;
@@ -19,6 +21,13 @@ function orderTotalDto(order: Order) {
       };
 }
 
+/**
+ * Traduce el agregado completo a la representacion usada por la capa de
+ * aplicacion.
+ *
+ * La traduccion calcula subtotales desde los value objects del dominio y evita
+ * exponer referencias mutables internas del agregado.
+ */
 export function mapOrderToDto(order: Order): OrderDto {
   const orderItems = order.itemsSnapshot();
 

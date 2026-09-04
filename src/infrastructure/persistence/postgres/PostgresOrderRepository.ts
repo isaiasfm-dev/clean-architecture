@@ -29,6 +29,14 @@ type OrderItemRow = {
 
 type QueryExecutor = Pick<Pool | PoolClient, "query">;
 
+/**
+ * Adaptador PostgreSQL del puerto `OrderRepository`.
+ *
+ * Puede ejecutarse contra un `Pool` o contra un `PoolClient` transaccional. Las
+ * lecturas reconstruyen agregados mediante `Order.rehydrate` para representar
+ * estado persistido sin generar nuevos eventos de dominio. Al guardar, actualiza
+ * el pedido y sustituye completamente sus lineas por el snapshot actual.
+ */
 export class PostgresOrderRepository implements OrderRepository {
   public constructor(private readonly executor: QueryExecutor) {}
 
@@ -125,6 +133,7 @@ export class PostgresOrderRepository implements OrderRepository {
   }
 
   private rehydrateOrder(orderRow: OrderRow, itemRows: OrderItemRow[]): Order {
+    // La lectura reconstruye un agregado ya persistido; no debe registrar eventos nuevos.
     return Order.rehydrate({
       id: OrderId(orderRow.order_id),
       customerId: CustomerId(orderRow.customer_id),
@@ -149,6 +158,7 @@ export class PostgresOrderRepository implements OrderRepository {
   }
 
   private async replaceOrderItems(order: Order): Promise<void> {
+    // Las lineas se sustituyen completas para reflejar el snapshot actual del agregado.
     await this.executor.query(
       `
       DELETE FROM order_items

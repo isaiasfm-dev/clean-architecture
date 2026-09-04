@@ -2,6 +2,13 @@
 import type { OrderRepository } from "#application/ports/OrderRepository";
 import type { Order } from "#domain/entities/Order";
 
+/**
+ * Implementacion en memoria del puerto `OrderRepository`.
+ *
+ * Almacena las mismas instancias de agregado que recibe en `save`; las lecturas
+ * no clonan ni rehidratan el pedido. Esta semantica la diferencia del adaptador
+ * PostgreSQL y la limita al ciclo de vida del proceso que la construye.
+ */
 export class InMemoryOrderRepository implements OrderRepository {
   private readonly orders = new Map<string, Order>();
 

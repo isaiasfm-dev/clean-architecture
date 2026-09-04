@@ -8,6 +8,12 @@ import type { ApplicationError, ValidationError } from "#application/errors/Appl
 import { mapOrderToCustomerOrderDto } from "#application/mappers/OrderMappers";
 import { fail, ok, type Result } from "#shared/result";
 
+/**
+ * Caso de uso de consulta que obtiene los pedidos asociados a un cliente.
+ *
+ * Usa `OrderRepository` directamente y representa la ausencia de pedidos como
+ * una lista vacia, no como un error de aplicacion.
+ */
 export class FindOrdersByCustomerId {
   public constructor(private readonly context: FindOrdersByCustomerIdContext) {}
 

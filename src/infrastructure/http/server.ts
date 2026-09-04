@@ -41,6 +41,14 @@ function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unexpected error";
 }
 
+/**
+ * Construye el servidor Fastify y sus rutas de pedidos.
+ *
+ * Cada handler crea un scope y un logger hijo con `requestId` y operacion.
+ * Las excepciones inesperadas se registran con sus detalles internos, pero la
+ * respuesta HTTP usa la presentacion generica de fallo de dependencia.
+ * Las peticiones registran metadatos seleccionados, no el `body` completo.
+ */
 export function buildServer(container: ApplicationServices, logger: Logger = new NoopLogger()) {
   const server = Fastify();
 
